@@ -6,6 +6,8 @@ function AdminDashboard() {
   const { user, token } = useAuth();
 
   const [orders, setOrders] = useState([]);
+  const [riders, setRiders] = useState([]);
+  const [selectedRiders, setSelectedRiders] = useState({});
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
@@ -28,9 +30,24 @@ function AdminDashboard() {
     }
   };
 
+  const fetchRiders = async () => {
+    try {
+      const response = await api.get("/admin/riders", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setRiders(response.data.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   useEffect(() => {
     if (user?.role === "admin") {
       fetchOrders();
+      fetchRiders();
     } else {
       setLoading(false);
     }
@@ -95,6 +112,41 @@ function AdminDashboard() {
     }
   };
 
+  const assignRider = async (orderId) => {
+    const riderId = selectedRiders[orderId];
+
+    if (!riderId) {
+      alert("Please select a rider first.");
+      return;
+    }
+
+    try {
+      await api.put(
+        `/admin/orders/${orderId}/assign-rider`,
+        {
+          riderId,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setSelectedRiders({
+        ...selectedRiders,
+        [orderId]: "",
+      });
+
+      fetchOrders();
+      fetchRiders();
+    } catch (error) {
+      alert(error.response?.data?.message || "Failed to assign rider.");
+    }
+  };
+
+  const availableRiders = riders.filter((rider) => rider.isAvailable);
+
   if (!user || user.role !== "admin") {
     return (
       <div className="checkout-message-box">
@@ -113,10 +165,29 @@ function AdminDashboard() {
       <div className="admin-header">
         <div>
           <h1>Admin Orders Dashboard</h1>
-          <p>Manage customer orders for Paradise Burger.</p>
+          <p>Manage customer orders and assign riders.</p>
         </div>
 
-        <button onClick={fetchOrders}>Refresh Orders</button>
+        <button
+          onClick={() => {
+            fetchOrders();
+            fetchRiders();
+          }}
+        >
+          Refresh
+        </button>
+      </div>
+
+      <div className="admin-stats">
+        <div>
+          <strong>Total Orders</strong>
+          <span>{orders.length}</span>
+        </div>
+
+        <div>
+          <strong>Available Riders</strong>
+          <span>{availableRiders.length}</span>
+        </div>
       </div>
 
       {message && <p className="form-message">{message}</p>}
@@ -187,6 +258,13 @@ function AdminDashboard() {
                 </p>
               )}
 
+              {order.assignedRider && (
+                <p className="assigned-rider-text">
+                  <strong>Assigned Rider:</strong>{" "}
+                  {order.assignedRider.fullName || "Rider assigned"}
+                </p>
+              )}
+
               <div className="admin-order-actions">
                 {order.orderStatus === "Pending" && (
                   <>
@@ -237,9 +315,42 @@ function AdminDashboard() {
                 )}
 
                 {order.orderStatus === "Ready" && (
-                  <button className="assign-btn">
-                    Ready for Rider Assignment
-                  </button>
+                  <div className="rider-assign-box">
+                    <select
+                      value={selectedRiders[order._id] || ""}
+                      onChange={(e) =>
+                        setSelectedRiders({
+                          ...selectedRiders,
+                          [order._id]: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="">Select available rider</option>
+
+                      {availableRiders.map((rider) => (
+                        <option key={rider.user._id} value={rider.user._id}>
+                          {rider.user.fullName} — {rider.bikeNumberPlate}
+                        </option>
+                      ))}
+                    </select>
+
+                    <button
+                      className="assign-btn"
+                      onClick={() => assignRider(order._id)}
+                    >
+                      Assign Rider
+                    </button>
+                  </div>
+                )}
+
+                {order.orderStatus === "Assigned to Rider" && (
+                  <p className="assigned-rider-text">
+                    Order assigned and waiting for rider pickup.
+                  </p>
+                )}
+
+                {order.orderStatus === "Delivered" && (
+                  <p className="delivered-text">Order delivered successfully.</p>
                 )}
               </div>
             </div>
