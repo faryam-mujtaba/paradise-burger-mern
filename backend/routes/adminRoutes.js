@@ -1,7 +1,10 @@
 const express = require("express");
 const { protect } = require("../middlewares/authMiddleware");
 const { authorizeRoles } = require("../middlewares/roleMiddleware");
-
+const {
+  createRider,
+  getAllRiders,
+} = require("../controllers/riderController");
 const {
   getAllOrders,
   getAdminOrderById,
@@ -27,5 +30,6 @@ router.get("/orders/:id", protect, authorizeRoles("admin"), getAdminOrderById);
 router.put("/orders/:id/accept", protect, authorizeRoles("admin"), acceptOrder);
 router.put("/orders/:id/reject", protect, authorizeRoles("admin"), rejectOrder);
 router.put("/orders/:id/status", protect, authorizeRoles("admin"), updateOrderStatus);
-
+router.post("/riders", protect, authorizeRoles("admin"), createRider);
+router.get("/riders", protect, authorizeRoles("admin"), getAllRiders);
 module.exports = router;
