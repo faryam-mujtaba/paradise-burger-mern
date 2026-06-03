@@ -11,6 +11,7 @@ const {
   acceptOrder,
   rejectOrder,
   updateOrderStatus,
+  assignOrderToRider,
 } = require("../controllers/adminOrderController");
 
 const router = express.Router();
@@ -32,4 +33,11 @@ router.put("/orders/:id/reject", protect, authorizeRoles("admin"), rejectOrder);
 router.put("/orders/:id/status", protect, authorizeRoles("admin"), updateOrderStatus);
 router.post("/riders", protect, authorizeRoles("admin"), createRider);
 router.get("/riders", protect, authorizeRoles("admin"), getAllRiders);
+router.put(
+  "/orders/:id/assign-rider",
+  protect,
+  authorizeRoles("admin"),
+  assignOrderToRider
+);
+
 module.exports = router;
