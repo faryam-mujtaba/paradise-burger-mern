@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const RiderProfile = require("../models/RiderProfile");
+const Order = require("../models/Order");
 
 // Admin: Create rider
 const createRider = async (req, res) => {
@@ -166,9 +167,250 @@ const getMyRiderProfile = async (req, res) => {
     });
   }
 };
+
+// Rider: Get assigned orders
+const getAssignedOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({ assignedRider: req.user._id })
+      .populate("customer", "fullName phone email")
+      .populate("items.menuItem", "name image")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      message: "Assigned orders fetched successfully",
+      data: orders,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch assigned orders",
+      error: error.message,
+    });
+  }
+};
+
+// Rider: Mark order as picked up
+const markOrderPickedUp = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    if (!order.assignedRider || order.assignedRider.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "This order is not assigned to you",
+      });
+    }
+
+    if (order.orderStatus !== "Assigned to Rider") {
+      return res.status(400).json({
+        success: false,
+        message: "Only assigned orders can be picked up",
+      });
+    }
+
+    order.orderStatus = "Picked Up";
+    order.pickedUpAt = new Date();
+
+    order.statusHistory.push({
+      status: "Picked Up",
+      changedBy: req.user._id,
+      note: "Order picked up by rider",
+    });
+
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Order marked as picked up",
+      data: order,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update pickup status",
+      error: error.message,
+    });
+  }
+};
+
+// Rider: Mark order as out for delivery
+const markOrderOutForDelivery = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    if (!order.assignedRider || order.assignedRider.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "This order is not assigned to you",
+      });
+    }
+
+    if (order.orderStatus !== "Picked Up") {
+      return res.status(400).json({
+        success: false,
+        message: "Only picked up orders can be marked out for delivery",
+      });
+    }
+
+    order.orderStatus = "Out for Delivery";
+
+    order.statusHistory.push({
+      status: "Out for Delivery",
+      changedBy: req.user._id,
+      note: "Order is out for delivery",
+    });
+
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Order marked as out for delivery",
+      data: order,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update delivery status",
+      error: error.message,
+    });
+  }
+};
+
+// Rider: Mark order as delivered
+const markOrderDelivered = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    if (!order.assignedRider || order.assignedRider.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "This order is not assigned to you",
+      });
+    }
+
+    if (order.orderStatus !== "Out for Delivery" && order.orderStatus !== "Picked Up") {
+      return res.status(400).json({
+        success: false,
+        message: "Only picked up or out for delivery orders can be delivered",
+      });
+    }
+
+    order.orderStatus = "Delivered";
+    order.deliveredAt = new Date();
+
+    order.statusHistory.push({
+      status: "Delivered",
+      changedBy: req.user._id,
+      note: "Order delivered by rider",
+    });
+
+    const riderProfile = await RiderProfile.findOne({ user: req.user._id });
+
+    if (riderProfile) {
+      riderProfile.totalCompletedDeliveries += 1;
+      riderProfile.isAvailable = true;
+      await riderProfile.save();
+    }
+
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Order marked as delivered",
+      data: order,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to mark order as delivered",
+      error: error.message,
+    });
+  }
+};
+
+// Rider: Mark order as failed delivery
+const markOrderFailed = async (req, res) => {
+  try {
+    const { reason } = req.body;
+
+    const order = await Order.findById(req.params.id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    if (!order.assignedRider || order.assignedRider.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "This order is not assigned to you",
+      });
+    }
+
+    order.orderStatus = "Failed Delivery";
+
+    order.statusHistory.push({
+      status: "Failed Delivery",
+      changedBy: req.user._id,
+      note: reason || "Delivery failed",
+    });
+
+    const riderProfile = await RiderProfile.findOne({ user: req.user._id });
+
+    if (riderProfile) {
+      riderProfile.totalFailedDeliveries += 1;
+      riderProfile.isAvailable = true;
+      await riderProfile.save();
+    }
+
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Order marked as failed delivery",
+      data: order,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to mark order as failed",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createRider,
   getAllRiders,
   updateRiderAvailability,
   getMyRiderProfile,
+  getAssignedOrders,
+  markOrderPickedUp,
+  markOrderOutForDelivery,
+  markOrderDelivered,
+  markOrderFailed,
 };
