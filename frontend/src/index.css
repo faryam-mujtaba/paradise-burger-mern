@@ -890,3 +890,89 @@ a {
     width: 100%;
   }
 }
+
+
+
+.rider-profile-card {
+  background: white;
+  border: 2px solid #f1d6b8;
+  border-radius: 20px;
+  padding: 22px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.rider-profile-card h2 {
+  margin-top: 0;
+  color: #d62828;
+}
+
+.rider-profile-card p {
+  margin: 8px 0;
+}
+
+.rider-profile-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 14px;
+}
+
+.availability-badge {
+  padding: 9px 14px;
+  border-radius: 999px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.availability-badge.available {
+  background: #e7f8ef;
+  color: #176b3a;
+}
+
+.availability-badge.not-available {
+  background: #fdecec;
+  color: #b91c1c;
+}
+
+.availability-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.availability-actions button {
+  border: none;
+  padding: 11px 14px;
+  border-radius: 10px;
+  background: #ffb703;
+  color: #111;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.availability-actions button:hover {
+  background: #fca311;
+}
+
+@media (max-width: 768px) {
+  .rider-profile-card {
+    flex-direction: column;
+  }
+
+  .rider-profile-right {
+    align-items: flex-start;
+  }
+
+  .availability-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .availability-actions button {
+    width: 100%;
+  }
+}
