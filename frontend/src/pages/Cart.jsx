@@ -57,7 +57,9 @@ function Cart() {
             Clear Cart
           </button>
 
-          <button className="checkout-btn">Proceed to Checkout</button>
+          <button className="checkout-btn" onClick={() => window.location.href = "/checkout"}>
+  Proceed to Checkout
+</button>
         </div>
       </div>
     </div>
