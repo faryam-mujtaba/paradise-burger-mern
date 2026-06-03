@@ -35,6 +35,16 @@ function Menu() {
     return item ? item.quantity : 0;
   };
 
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return "";
+
+    if (imageUrl.startsWith("http")) {
+      return imageUrl;
+    }
+
+    return `http://localhost:5000${imageUrl}`;
+  };
+
   const handleAddToCart = (item) => {
     addToCart(item);
 
@@ -70,9 +80,7 @@ function Menu() {
 
           <div>
             <strong>{notification.itemName}</strong>
-            <span>
-              Added to cart · Quantity: {notification.quantity}
-            </span>
+            <span>Added to cart · Quantity: {notification.quantity}</span>
           </div>
         </div>
       )}
@@ -90,9 +98,9 @@ function Menu() {
             return (
               <div className="menu-card" key={item._id}>
                 <div className="menu-image-box">
-                  {item.image ? (
+                  {item.imageUrl ? (
                     <img
-                      src={item.image}
+                      src={getImageUrl(item.imageUrl)}
                       alt={item.name}
                       className="menu-image"
                     />
@@ -114,13 +122,17 @@ function Menu() {
                     <strong>Price:</strong> Rs. {item.price}
                   </p>
 
-                  <p>
-                    <strong>Preparation Time:</strong> {item.preparationTime} min
-                  </p>
+                  {item.preparationTime && (
+                    <p>
+                      <strong>Preparation Time:</strong>{" "}
+                      {item.preparationTime} min
+                    </p>
+                  )}
 
                   {itemQuantity > 0 && (
                     <p className="item-cart-status">
-                      In cart: {itemQuantity} item{itemQuantity > 1 ? "s" : ""}
+                      In cart: {itemQuantity} item
+                      {itemQuantity > 1 ? "s" : ""}
                     </p>
                   )}
                 </div>
@@ -128,8 +140,13 @@ function Menu() {
                 <button
                   className={isAdded ? "cart-btn cart-btn-added" : "cart-btn"}
                   onClick={() => handleAddToCart(item)}
+                  disabled={!item.isAvailable}
                 >
-                  {isAdded ? "Added to Cart ✓" : "Add to Cart"}
+                  {!item.isAvailable
+                    ? "Not Available"
+                    : isAdded
+                    ? "Added to Cart ✓"
+                    : "Add to Cart"}
                 </button>
               </div>
             );

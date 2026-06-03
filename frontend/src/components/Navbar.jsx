@@ -24,12 +24,23 @@ function Navbar() {
         <Link to="/">Home</Link>
         <Link to="/menu">Menu</Link>
 
-        {user?.role === "admin" && <Link to="/admin">Admin Dashboard</Link>}
-        {user?.role === "rider" && <Link to="/rider">Rider Dashboard</Link>}
+        {user?.role === "customer" && (
+          <Link to="/my-orders">My Orders</Link>
+        )}
+
+        {user?.role === "admin" && (
+          <>
+            <Link to="/admin">Admin Dashboard</Link>
+            <Link to="/admin/menu">Manage Menu</Link>
+          </>
+        )}
+
+        {user?.role === "rider" && (
+          <Link to="/rider">Rider Dashboard</Link>
+        )}
 
         <Link to="/cart" className="cart-nav-link">
           Cart
-          {user?.role === "customer" && <Link to="/my-orders">My Orders</Link>}
           <span className="cart-count-badge">{cartCount}</span>
         </Link>
 
@@ -38,6 +49,7 @@ function Navbar() {
             <span className="nav-user">
               {user.fullName} ({user.role})
             </span>
+
             <button className="logout-btn" onClick={handleLogout}>
               Logout
             </button>
@@ -46,7 +58,6 @@ function Navbar() {
           <>
             <Link to="/login">Login</Link>
             <Link to="/register">Register</Link>
-            
           </>
         )}
       </div>

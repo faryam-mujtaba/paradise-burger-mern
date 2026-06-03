@@ -12,6 +12,7 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import OrderSuccess from "./pages/OrderSuccess";
 import MyOrders from "./pages/MyOrders";
+import AdminMenuManagement from "./pages/AdminMenuManagement";
 
 function App() {
   return (
@@ -28,8 +29,9 @@ function App() {
           <Route path="/rider" element={<RiderDashboard />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
-<Route path="/order-success" element={<OrderSuccess />} />
-<Route path="/my-orders" element={<MyOrders />} />
+          <Route path="/order-success" element={<OrderSuccess />} />
+          <Route path="/my-orders" element={<MyOrders />} />
+          <Route path="/admin/menu" element={<AdminMenuManagement />} />
         </Routes>
       </main>
     </BrowserRouter>
