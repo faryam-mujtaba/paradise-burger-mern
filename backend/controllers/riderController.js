@@ -97,7 +97,78 @@ const getAllRiders = async (req, res) => {
   }
 };
 
+// Rider: Update own availability
+const updateRiderAvailability = async (req, res) => {
+  try {
+    const { isAvailable } = req.body;
+
+    if (typeof isAvailable !== "boolean") {
+      return res.status(400).json({
+        success: false,
+        message: "isAvailable must be true or false",
+      });
+    }
+
+    const riderProfile = await RiderProfile.findOne({ user: req.user._id });
+
+    if (!riderProfile) {
+      return res.status(404).json({
+        success: false,
+        message: "Rider profile not found",
+      });
+    }
+
+    riderProfile.isAvailable = isAvailable;
+
+    if (isAvailable) {
+      riderProfile.availabilityCount += 1;
+    }
+
+    await riderProfile.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Rider availability updated successfully",
+      data: riderProfile,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update rider availability",
+      error: error.message,
+    });
+  }
+};
+
+// Rider: Get own rider profile
+const getMyRiderProfile = async (req, res) => {
+  try {
+    const riderProfile = await RiderProfile.findOne({ user: req.user._id })
+      .populate("user", "fullName phone email role isActive");
+
+    if (!riderProfile) {
+      return res.status(404).json({
+        success: false,
+        message: "Rider profile not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Rider profile fetched successfully",
+      data: riderProfile,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch rider profile",
+      error: error.message,
+    });
+  }
+};
 module.exports = {
   createRider,
   getAllRiders,
+  updateRiderAvailability,
+  getMyRiderProfile,
 };
