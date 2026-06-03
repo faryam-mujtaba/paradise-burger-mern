@@ -1,9 +1,13 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useCart } from "../context/CartContext";
 
 function Navbar() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { cartItems } = useCart();
+
+  const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 
   const handleLogout = () => {
     logout();
@@ -22,6 +26,11 @@ function Navbar() {
 
         {user?.role === "admin" && <Link to="/admin">Admin Dashboard</Link>}
         {user?.role === "rider" && <Link to="/rider">Rider Dashboard</Link>}
+
+        <Link to="/cart" className="cart-nav-link">
+          Cart
+          <span className="cart-count-badge">{cartCount}</span>
+        </Link>
 
         {user ? (
           <>
