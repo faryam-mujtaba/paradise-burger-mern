@@ -249,3 +249,25 @@ a {
   font-weight: bold;
   color: #d62828;
 }
+.nav-user {
+  color: #ffb703;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.logout-btn {
+  border: none;
+  background: #d62828;
+  color: white;
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.logout-btn:hover {
+  background: #b91c1c;
+}
+.logout-btn {
+  padding: 8px 12px;
+}
