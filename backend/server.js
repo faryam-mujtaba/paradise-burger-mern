@@ -6,6 +6,7 @@ const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
+const menuRoutes = require("./routes/menuRoutes");
 
 connectDB();
 
@@ -17,6 +18,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/menu", menuRoutes);
 
 app.get("/", (req, res) => {
   res.send("Paradise Burger API is running...");
