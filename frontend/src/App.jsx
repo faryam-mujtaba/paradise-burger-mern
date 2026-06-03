@@ -11,7 +11,7 @@ import RiderDashboard from "./pages/RiderDashboard";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import OrderSuccess from "./pages/OrderSuccess";
-
+import MyOrders from "./pages/MyOrders";
 
 function App() {
   return (
@@ -29,6 +29,7 @@ function App() {
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
 <Route path="/order-success" element={<OrderSuccess />} />
+<Route path="/my-orders" element={<MyOrders />} />
         </Routes>
       </main>
     </BrowserRouter>

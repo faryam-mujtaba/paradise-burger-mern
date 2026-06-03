@@ -29,6 +29,7 @@ function Navbar() {
 
         <Link to="/cart" className="cart-nav-link">
           Cart
+          {user?.role === "customer" && <Link to="/my-orders">My Orders</Link>}
           <span className="cart-count-badge">{cartCount}</span>
         </Link>
 
@@ -45,6 +46,7 @@ function Navbar() {
           <>
             <Link to="/login">Login</Link>
             <Link to="/register">Register</Link>
+            
           </>
         )}
       </div>

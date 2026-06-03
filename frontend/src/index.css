@@ -556,3 +556,113 @@ a {
     grid-template-columns: 1fr;
   }
 }
+
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.order-card {
+  background: white;
+  border: 2px solid #f1d6b8;
+  border-radius: 20px;
+  padding: 22px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+}
+
+.order-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.order-card-header h2 {
+  margin: 0;
+  color: #d62828;
+}
+
+.order-card-header p {
+  margin: 6px 0 0;
+  color: #666;
+}
+
+.order-status {
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: bold;
+  white-space: nowrap;
+  background: #fff2cc;
+  color: #7a4b00;
+}
+
+.order-status.delivered {
+  background: #e7f8ef;
+  color: #176b3a;
+}
+
+.order-status.cancelled,
+.order-status.rejected,
+.order-status.failed-delivery {
+  background: #fdecec;
+  color: #b91c1c;
+}
+
+.order-status.preparing,
+.order-status.ready,
+.order-status.assigned-to-rider,
+.order-status.picked-up,
+.order-status.out-for-delivery {
+  background: #eaf3ff;
+  color: #1d4ed8;
+}
+
+.order-items {
+  margin-bottom: 16px;
+}
+
+.order-item-row,
+.order-summary-line,
+.order-total-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.order-total-line {
+  padding-top: 12px;
+  border-top: 1px solid #eee;
+  font-size: 20px;
+  color: #d62828;
+}
+
+.status-history {
+  margin-top: 18px;
+  background: #fff8f0;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.status-history h3 {
+  margin-top: 0;
+  color: #d62828;
+}
+
+.status-history p {
+  margin: 8px 0;
+}
+
+@media (max-width: 768px) {
+  .order-card-header {
+    flex-direction: column;
+  }
+
+  .order-status {
+    align-self: flex-start;
+  }
+}
