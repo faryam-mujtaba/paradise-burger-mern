@@ -1,9 +1,24 @@
 const MenuItem = require("../models/MenuItem");
 const Category = require("../models/Category");
 
+const findValidCategory = async (category) => {
+  let categoryExists = null;
+
+  if (category) {
+    categoryExists = await Category.findOne({
+      _id: category,
+      $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }],
+    });
+  }
+
+  return categoryExists;
+};
+
 const getMenuItems = async (req, res) => {
   try {
-    const menuItems = await MenuItem.find({ isDeleted: false })
+    const menuItems = await MenuItem.find({
+      $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }],
+    })
       .populate("category", "name")
       .sort({ createdAt: -1 });
 
@@ -25,7 +40,7 @@ const getMenuItemById = async (req, res) => {
   try {
     const menuItem = await MenuItem.findOne({
       _id: req.params.id,
-      isDeleted: false,
+      $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }],
     }).populate("category", "name");
 
     if (!menuItem) {
@@ -50,7 +65,14 @@ const getMenuItemById = async (req, res) => {
 
 const createMenuItem = async (req, res) => {
   try {
-    const { name, description, price, category, isAvailable } = req.body;
+    const {
+      name,
+      description,
+      price,
+      category,
+      isAvailable,
+      preparationTime,
+    } = req.body;
 
     if (!name || !price || !category) {
       return res.status(400).json({
@@ -59,10 +81,7 @@ const createMenuItem = async (req, res) => {
       });
     }
 
-    const categoryExists = await Category.findOne({
-      _id: category,
-      isDeleted: false,
-    });
+    const categoryExists = await findValidCategory(category);
 
     if (!categoryExists) {
       return res.status(404).json({
@@ -80,16 +99,23 @@ const createMenuItem = async (req, res) => {
     const menuItem = await MenuItem.create({
       name,
       description,
-      price,
+      price: Number(price),
       category,
       imageUrl,
+      preparationTime: preparationTime ? Number(preparationTime) : 20,
       isAvailable: isAvailable === "false" ? false : true,
+      isDeleted: false,
     });
+
+    const createdMenuItem = await MenuItem.findById(menuItem._id).populate(
+      "category",
+      "name"
+    );
 
     res.status(201).json({
       success: true,
       message: "Menu item created successfully",
-      data: menuItem,
+      data: createdMenuItem,
     });
   } catch (error) {
     res.status(500).json({
@@ -102,11 +128,18 @@ const createMenuItem = async (req, res) => {
 
 const updateMenuItem = async (req, res) => {
   try {
-    const { name, description, price, category, isAvailable } = req.body;
+    const {
+      name,
+      description,
+      price,
+      category,
+      isAvailable,
+      preparationTime,
+    } = req.body;
 
     const menuItem = await MenuItem.findOne({
       _id: req.params.id,
-      isDeleted: false,
+      $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }],
     });
 
     if (!menuItem) {
@@ -117,10 +150,7 @@ const updateMenuItem = async (req, res) => {
     }
 
     if (category) {
-      const categoryExists = await Category.findOne({
-        _id: category,
-        isDeleted: false,
-      });
+      const categoryExists = await findValidCategory(category);
 
       if (!categoryExists) {
         return res.status(404).json({
@@ -133,8 +163,18 @@ const updateMenuItem = async (req, res) => {
     }
 
     if (name) menuItem.name = name;
-    if (description !== undefined) menuItem.description = description;
-    if (price) menuItem.price = price;
+
+    if (description !== undefined) {
+      menuItem.description = description;
+    }
+
+    if (price) {
+      menuItem.price = Number(price);
+    }
+
+    if (preparationTime) {
+      menuItem.preparationTime = Number(preparationTime);
+    }
 
     if (isAvailable !== undefined) {
       menuItem.isAvailable = isAvailable === "true" || isAvailable === true;
@@ -169,7 +209,7 @@ const deleteMenuItem = async (req, res) => {
   try {
     const menuItem = await MenuItem.findOne({
       _id: req.params.id,
-      isDeleted: false,
+      $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }],
     });
 
     if (!menuItem) {
