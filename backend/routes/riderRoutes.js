@@ -1,8 +1,7 @@
 const express = require("express");
-
 const {
-  updateRiderAvailability,
   getMyRiderProfile,
+  updateRiderAvailability,
   getAssignedOrders,
   markOrderPickedUp,
   markOrderOutForDelivery,

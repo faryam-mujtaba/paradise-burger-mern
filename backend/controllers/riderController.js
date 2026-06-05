@@ -52,6 +52,7 @@ const createRider = async (req, res) => {
       bikeNumberPlate,
       behaviorNotes: behaviorNotes || "",
       isAvailable: false,
+      isActive: true,
     });
 
     return res.status(201).json({
@@ -119,6 +120,13 @@ const updateRiderAvailability = async (req, res) => {
       });
     }
 
+    if (!riderProfile.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: "Your rider account is inactive. Contact admin.",
+      });
+    }
+
     riderProfile.isAvailable = isAvailable;
 
     if (isAvailable) {
@@ -173,7 +181,7 @@ const getAssignedOrders = async (req, res) => {
   try {
     const orders = await Order.find({ assignedRider: req.user._id })
       .populate("customer", "fullName phone email")
-      .populate("items.menuItem", "name image")
+      .populate("items.menuItem", "name imageUrl")
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -202,7 +210,10 @@ const markOrderPickedUp = async (req, res) => {
       });
     }
 
-    if (!order.assignedRider || order.assignedRider.toString() !== req.user._id.toString()) {
+    if (
+      !order.assignedRider ||
+      order.assignedRider.toString() !== req.user._id.toString()
+    ) {
       return res.status(403).json({
         success: false,
         message: "This order is not assigned to you",
@@ -253,7 +264,10 @@ const markOrderOutForDelivery = async (req, res) => {
       });
     }
 
-    if (!order.assignedRider || order.assignedRider.toString() !== req.user._id.toString()) {
+    if (
+      !order.assignedRider ||
+      order.assignedRider.toString() !== req.user._id.toString()
+    ) {
       return res.status(403).json({
         success: false,
         message: "This order is not assigned to you",
@@ -303,14 +317,20 @@ const markOrderDelivered = async (req, res) => {
       });
     }
 
-    if (!order.assignedRider || order.assignedRider.toString() !== req.user._id.toString()) {
+    if (
+      !order.assignedRider ||
+      order.assignedRider.toString() !== req.user._id.toString()
+    ) {
       return res.status(403).json({
         success: false,
         message: "This order is not assigned to you",
       });
     }
 
-    if (order.orderStatus !== "Out for Delivery" && order.orderStatus !== "Picked Up") {
+    if (
+      order.orderStatus !== "Out for Delivery" &&
+      order.orderStatus !== "Picked Up"
+    ) {
       return res.status(400).json({
         success: false,
         message: "Only picked up or out for delivery orders can be delivered",
@@ -364,7 +384,10 @@ const markOrderFailed = async (req, res) => {
       });
     }
 
-    if (!order.assignedRider || order.assignedRider.toString() !== req.user._id.toString()) {
+    if (
+      !order.assignedRider ||
+      order.assignedRider.toString() !== req.user._id.toString()
+    ) {
       return res.status(403).json({
         success: false,
         message: "This order is not assigned to you",
@@ -403,6 +426,83 @@ const markOrderFailed = async (req, res) => {
   }
 };
 
+// Admin: Deactivate rider
+const deactivateRider = async (req, res) => {
+  try {
+    const riderProfile = await RiderProfile.findById(req.params.id).populate(
+      "user",
+      "fullName phone email role isActive"
+    );
+
+    if (!riderProfile) {
+      return res.status(404).json({
+        success: false,
+        message: "Rider not found",
+      });
+    }
+
+    riderProfile.isActive = false;
+    riderProfile.isAvailable = false;
+
+    if (riderProfile.user) {
+      riderProfile.user.isActive = false;
+      await riderProfile.user.save();
+    }
+
+    await riderProfile.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Rider deactivated successfully",
+      data: riderProfile,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to deactivate rider",
+      error: error.message,
+    });
+  }
+};
+
+// Admin: Activate rider
+const activateRider = async (req, res) => {
+  try {
+    const riderProfile = await RiderProfile.findById(req.params.id).populate(
+      "user",
+      "fullName phone email role isActive"
+    );
+
+    if (!riderProfile) {
+      return res.status(404).json({
+        success: false,
+        message: "Rider not found",
+      });
+    }
+
+    riderProfile.isActive = true;
+
+    if (riderProfile.user) {
+      riderProfile.user.isActive = true;
+      await riderProfile.user.save();
+    }
+
+    await riderProfile.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Rider activated successfully",
+      data: riderProfile,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to activate rider",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createRider,
   getAllRiders,
@@ -413,4 +513,6 @@ module.exports = {
   markOrderOutForDelivery,
   markOrderDelivered,
   markOrderFailed,
+  deactivateRider,
+  activateRider,
 };

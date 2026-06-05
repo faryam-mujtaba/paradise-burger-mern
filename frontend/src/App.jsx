@@ -1,18 +1,22 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-
+import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
 
 import Home from "./pages/Home";
 import Menu from "./pages/Menu";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import AdminDashboard from "./pages/AdminDashboard";
-import RiderDashboard from "./pages/RiderDashboard";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import OrderSuccess from "./pages/OrderSuccess";
 import MyOrders from "./pages/MyOrders";
+
+import AdminDashboard from "./pages/AdminDashboard";
 import AdminMenuManagement from "./pages/AdminMenuManagement";
+import AdminRiderManagement from "./pages/AdminRiderManagement";
+import AdminCategoryManagement from "./pages/AdminCategoryManagement";
+
+import RiderDashboard from "./pages/RiderDashboard";
 
 function App() {
   return (
@@ -25,13 +29,87 @@ function App() {
           <Route path="/menu" element={<Menu />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/rider" element={<RiderDashboard />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/order-success" element={<OrderSuccess />} />
-          <Route path="/my-orders" element={<MyOrders />} />
-          <Route path="/admin/menu" element={<AdminMenuManagement />} />
+
+          <Route
+            path="/cart"
+            element={
+              <ProtectedRoute allowedRoles={["customer"]}>
+                <Cart />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/checkout"
+            element={
+              <ProtectedRoute allowedRoles={["customer"]}>
+                <Checkout />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/order-success"
+            element={
+              <ProtectedRoute allowedRoles={["customer"]}>
+                <OrderSuccess />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/my-orders"
+            element={
+              <ProtectedRoute allowedRoles={["customer"]}>
+                <MyOrders />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/menu"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AdminMenuManagement />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/riders"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AdminRiderManagement />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/categories"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AdminCategoryManagement />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/rider/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={["rider"]}>
+                <RiderDashboard />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </main>
     </BrowserRouter>

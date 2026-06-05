@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
-
 function AdminMenuManagement() {
   const { user, token } = useAuth();
 
@@ -179,14 +179,22 @@ function AdminMenuManagement() {
 
   return (
     <div>
-      <div className="admin-header">
-        <div>
-          <h1>Admin Menu Management</h1>
-          <p>Add, update, and remove Paradise Burger menu items.</p>
-        </div>
+     <div className="admin-header">
+  <div>
+    <h1>Admin Menu Management</h1>
+    <p>Add, update, and remove Paradise Burger menu items.</p>
+  </div>
 
-        <button onClick={fetchData}>Refresh</button>
-      </div>
+  <div className="admin-header-actions">
+    <Link to="/admin/dashboard" className="admin-link-btn">
+      Back to Dashboard
+    </Link>
+
+    <button className="admin-refresh-btn" onClick={fetchData}>
+      Refresh
+    </button>
+  </div>
+</div>
 
       {message && <p className="form-message">{message}</p>}
 

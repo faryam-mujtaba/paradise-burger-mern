@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -145,7 +146,9 @@ function AdminDashboard() {
     }
   };
 
-  const availableRiders = riders.filter((rider) => rider.isAvailable);
+  const availableRiders = riders.filter(
+    (rider) => rider.isAvailable && rider.isActive
+  );
 
   if (!user || user.role !== "admin") {
     return (
@@ -168,14 +171,27 @@ function AdminDashboard() {
           <p>Manage customer orders and assign riders.</p>
         </div>
 
-        <button
-          onClick={() => {
-            fetchOrders();
-            fetchRiders();
-          }}
-        >
-          Refresh
-        </button>
+        <div className="admin-header-actions">
+          <Link to="/admin/menu" className="admin-link-btn">
+  Manage Menu
+</Link>
+          <Link to="/admin/categories" className="admin-link-btn">
+            Manage Categories
+          </Link>
+          <Link to="/admin/riders" className="admin-link-btn">
+            Manage Riders
+          </Link>
+
+          <button
+            className="admin-refresh-btn"
+            onClick={() => {
+              fetchOrders();
+              fetchRiders();
+            }}
+          >
+            Refresh
+          </button>
+        </div>
       </div>
 
       <div className="admin-stats">
@@ -221,7 +237,8 @@ function AdminDashboard() {
                   <strong>Phone:</strong> {order.customerSnapshot.phone}
                 </p>
                 <p>
-                  <strong>Address:</strong> {order.deliveryAddress.addressLine},{" "}
+                  <strong>Address:</strong>{" "}
+                  {order.deliveryAddress.addressLine},{" "}
                   {order.deliveryAddress.area}, {order.deliveryAddress.city}
                 </p>
               </div>
@@ -328,8 +345,9 @@ function AdminDashboard() {
                       <option value="">Select available rider</option>
 
                       {availableRiders.map((rider) => (
-                        <option key={rider.user._id} value={rider.user._id}>
-                          {rider.user.fullName} — {rider.bikeNumberPlate}
+                        <option key={rider._id} value={rider._id}>
+                          {rider.user?.fullName || rider.user?.name || "Rider"} —{" "}
+                          {rider.bikeNumberPlate}
                         </option>
                       ))}
                     </select>
@@ -350,7 +368,9 @@ function AdminDashboard() {
                 )}
 
                 {order.orderStatus === "Delivered" && (
-                  <p className="delivered-text">Order delivered successfully.</p>
+                  <p className="delivered-text">
+                    Order delivered successfully.
+                  </p>
                 )}
               </div>
             </div>

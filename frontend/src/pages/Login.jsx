@@ -39,9 +39,9 @@ function Login() {
       setMessage("Login successful");
 
       if (user.role === "admin") {
-        navigate("/admin");
+        navigate("/admin/dashboard");
       } else if (user.role === "rider") {
-        navigate("/rider");
+        navigate("/rider/dashboard");
       } else {
         navigate("/menu");
       }
@@ -68,6 +68,7 @@ function Login() {
           placeholder="Enter phone number"
           value={formData.phone}
           onChange={handleChange}
+          required
         />
 
         <label>Password</label>
@@ -77,6 +78,7 @@ function Login() {
           placeholder="Enter password"
           value={formData.password}
           onChange={handleChange}
+          required
         />
 
         <button type="submit" disabled={loading}>

@@ -1,6 +1,6 @@
 const Order = require("../models/Order");
 const RiderProfile = require("../models/RiderProfile");
-const User = require("../models/User");
+
 // Admin: Get all orders
 const getAllOrders = async (req, res) => {
   try {
@@ -248,42 +248,53 @@ const assignOrderToRider = async (req, res) => {
       });
     }
 
-    const riderUser = await User.findById(riderId);
+    const riderProfile = await RiderProfile.findById(riderId).populate(
+      "user",
+      "fullName phone email role isActive"
+    );
 
-    if (!riderUser || riderUser.role !== "rider") {
+    if (!riderProfile || !riderProfile.user) {
       return res.status(404).json({
         success: false,
         message: "Rider not found",
       });
     }
 
-    const riderProfile = await RiderProfile.findOne({ user: riderId });
-
-    if (!riderProfile) {
-      return res.status(404).json({
+    if (riderProfile.user.role !== "rider") {
+      return res.status(400).json({
         success: false,
-        message: "Rider profile not found",
+        message: "Selected user is not a rider",
+      });
+    }
+
+    if (!riderProfile.isActive || !riderProfile.user.isActive) {
+      return res.status(400).json({
+        success: false,
+        message: "This rider is inactive and cannot be assigned",
       });
     }
 
     if (!riderProfile.isAvailable) {
       return res.status(400).json({
         success: false,
-        message: "Rider is not available",
+        message: "This rider is not available",
       });
     }
 
-    order.assignedRider = riderId;
+    order.assignedRider = riderProfile.user._id;
     order.orderStatus = "Assigned to Rider";
 
     order.statusHistory.push({
       status: "Assigned to Rider",
       changedBy: req.user._id,
-      note: `Order assigned to rider ${riderUser.fullName}`,
+      note: `Order assigned to rider ${riderProfile.user.fullName}`,
     });
 
-    riderProfile.totalAssignedOrders += 1;
     riderProfile.isAvailable = false;
+
+    if (typeof riderProfile.totalAssignedOrders === "number") {
+      riderProfile.totalAssignedOrders += 1;
+    }
 
     await order.save();
     await riderProfile.save();

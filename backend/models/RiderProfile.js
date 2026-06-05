@@ -24,6 +24,10 @@ const riderProfileSchema = new mongoose.Schema(
       trim: true,
       uppercase: true,
     },
+    isActive: {
+  type: Boolean,
+  default: true,
+},
     isAvailable: {
       type: Boolean,
       default: false,

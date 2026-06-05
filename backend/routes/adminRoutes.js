@@ -4,6 +4,8 @@ const { authorizeRoles } = require("../middlewares/roleMiddleware");
 const {
   createRider,
   getAllRiders,
+  deactivateRider,
+  activateRider,
 } = require("../controllers/riderController");
 const {
   getAllOrders,
@@ -39,5 +41,7 @@ router.put(
   authorizeRoles("admin"),
   assignOrderToRider
 );
+router.put("/riders/:id/deactivate", protect, authorizeRoles("admin"), deactivateRider);
 
+router.put("/riders/:id/activate", protect, authorizeRoles("admin"), activateRider);
 module.exports = router;

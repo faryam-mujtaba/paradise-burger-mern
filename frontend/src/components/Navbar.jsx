@@ -25,24 +25,28 @@ function Navbar() {
         <Link to="/menu">Menu</Link>
 
         {user?.role === "customer" && (
-          <Link to="/my-orders">My Orders</Link>
+          <>
+            <Link to="/my-orders">My Orders</Link>
+
+            <Link to="/cart" className="cart-nav-link">
+              Cart
+              <span className="cart-count-badge">{cartCount}</span>
+            </Link>
+          </>
         )}
 
         {user?.role === "admin" && (
           <>
-            <Link to="/admin">Admin Dashboard</Link>
-            <Link to="/admin/menu">Manage Menu</Link>
+            <Link to="/admin/dashboard">Dashboard</Link>
+            <Link to="/admin/menu">Menu Management</Link>
+            <Link to="/admin/categories">Categories</Link>
+            <Link to="/admin/riders">Riders</Link>
           </>
         )}
 
         {user?.role === "rider" && (
-          <Link to="/rider">Rider Dashboard</Link>
+          <Link to="/rider/dashboard">Dashboard</Link>
         )}
-
-        <Link to="/cart" className="cart-nav-link">
-          Cart
-          <span className="cart-count-badge">{cartCount}</span>
-        </Link>
 
         {user ? (
           <>

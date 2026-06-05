@@ -1,6 +1,9 @@
+import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 
 function Cart() {
+  const navigate = useNavigate();
+
   const {
     cartItems,
     increaseQuantity,
@@ -47,9 +50,11 @@ function Cart() {
         <p>
           <strong>Subtotal:</strong> Rs. {subtotal}
         </p>
+
         <p>
           <strong>Delivery Fee:</strong> Rs. {deliveryFee}
         </p>
+
         <h2>Total: Rs. {totalAmount}</h2>
 
         <div className="cart-bottom-actions">
@@ -57,9 +62,12 @@ function Cart() {
             Clear Cart
           </button>
 
-          <button className="checkout-btn" onClick={() => window.location.href = "/checkout"}>
-  Proceed to Checkout
-</button>
+          <button
+            className="checkout-btn"
+            onClick={() => navigate("/checkout")}
+          >
+            Proceed to Checkout
+          </button>
         </div>
       </div>
     </div>
