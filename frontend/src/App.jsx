@@ -17,7 +17,7 @@ import AdminRiderManagement from "./pages/AdminRiderManagement";
 import AdminCategoryManagement from "./pages/AdminCategoryManagement";
 
 import RiderDashboard from "./pages/RiderDashboard";
-
+import ChangePassword from "./pages/ChangePassword";
 function App() {
   return (
     <BrowserRouter>
@@ -110,6 +110,14 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+  path="/change-password"
+  element={
+    <ProtectedRoute allowedRoles={["customer", "admin", "rider"]}>
+      <ChangePassword />
+    </ProtectedRoute>
+  }
+/>
         </Routes>
       </main>
     </BrowserRouter>

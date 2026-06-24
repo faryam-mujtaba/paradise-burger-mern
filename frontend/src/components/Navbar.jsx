@@ -56,6 +56,7 @@ function Navbar() {
 
         {user ? (
           <>
+          <Link to="/change-password">Change Password</Link>
             <span className="nav-user">
               {user.fullName} ({user.role})
             </span>
