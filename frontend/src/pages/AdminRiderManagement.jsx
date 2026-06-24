@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import PageTransition from "../components/animations/PageTransition";
 
 function AdminRiderManagement() {
     const { user, token } = useAuth();
@@ -135,6 +136,7 @@ function AdminRiderManagement() {
     }
 
     return (
+         <PageTransition>
         <div>
             <div className="admin-header">
                 <div>
@@ -283,6 +285,7 @@ function AdminRiderManagement() {
                 </div>
             )}
         </div>
+        </PageTransition>
     );
 }
 

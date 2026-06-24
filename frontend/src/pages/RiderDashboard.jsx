@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import PageTransition from "../components/animations/PageTransition";
 
 function RiderDashboard() {
   const { user, token } = useAuth();
@@ -118,6 +119,7 @@ function RiderDashboard() {
   }
 
   return (
+    <PageTransition>
     <div>
       <div className="admin-header">
         <div>
@@ -299,6 +301,7 @@ function RiderDashboard() {
         </div>
       )}
     </div>
+    </PageTransition>
   );
 }
 

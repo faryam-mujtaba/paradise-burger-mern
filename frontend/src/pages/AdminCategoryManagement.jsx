@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
-
+import PageTransition from "../components/animations/PageTransition";
 function AdminCategoryManagement() {
   const { user, token } = useAuth();
 
@@ -127,6 +127,7 @@ function AdminCategoryManagement() {
   }
 
   return (
+    <PageTransition>
     <div>
  <div className="admin-header">
   <div>
@@ -221,6 +222,7 @@ function AdminCategoryManagement() {
         </div>
       )}
     </div>
+    </PageTransition>
   );
 }
 

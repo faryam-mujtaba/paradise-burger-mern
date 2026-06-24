@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
+import { motion } from "framer-motion";
 
 function Navbar() {
   const navigate = useNavigate();
@@ -14,8 +15,13 @@ function Navbar() {
     navigate("/login");
   };
 
-  return (
-    <nav className="navbar">
+ return (
+  <motion.nav
+    className="navbar"
+    initial={{ opacity: 0, y: -25 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.45, ease: "easeOut" }}
+  >
       <div className="navbar-logo">
         <Link to="/">Paradise Burger</Link>
       </div>
@@ -65,7 +71,7 @@ function Navbar() {
           </>
         )}
       </div>
-    </nav>
+    </motion.nav>
   );
 }
 

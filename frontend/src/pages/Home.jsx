@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
-
+import PageTransition from "../components/animations/PageTransition";
 function Home() {
   return (
+    <PageTransition>
+ 
     <div className="home-page">
       <section className="hero-section">
         <div className="hero-content">
@@ -82,6 +84,8 @@ function Home() {
         </div>
       </section>
     </div>
+     
+</PageTransition>
   );
 }
 
