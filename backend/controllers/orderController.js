@@ -1,5 +1,6 @@
 const Order = require("../models/Order");
 const MenuItem = require("../models/MenuItem");
+const Deal = require("../models/Deal");
 const User = require("../models/User");
 
 // Customer: Place order
@@ -14,6 +15,13 @@ const createOrder = async (req, res) => {
       });
     }
 
+    if (items.length > 20) {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot order more than 20 different items at once",
+      });
+    }
+
     if (
       !deliveryAddress ||
       !deliveryAddress.addressLine ||
@@ -23,6 +31,39 @@ const createOrder = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Complete delivery address is required",
+      });
+    }
+
+    const addressLine = deliveryAddress.addressLine.trim();
+    const city = deliveryAddress.city.trim();
+    const area = deliveryAddress.area.trim();
+    const instructions = specialInstructions ? specialInstructions.trim() : "";
+
+    if (addressLine.length < 8 || addressLine.length > 120) {
+      return res.status(400).json({
+        success: false,
+        message: "Address must be between 8 and 120 characters",
+      });
+    }
+
+    if (city.length < 2 || city.length > 40) {
+      return res.status(400).json({
+        success: false,
+        message: "City must be between 2 and 40 characters",
+      });
+    }
+
+    if (area.length < 2 || area.length > 60) {
+      return res.status(400).json({
+        success: false,
+        message: "Area must be between 2 and 60 characters",
+      });
+    }
+
+    if (instructions.length > 180) {
+      return res.status(400).json({
+        success: false,
+        message: "Special instructions cannot be more than 180 characters",
       });
     }
 
@@ -50,41 +91,74 @@ const createOrder = async (req, res) => {
     let subtotal = 0;
 
     for (const item of items) {
-      const menuItem = await MenuItem.findById(item.menuItem);
-
-      if (!menuItem || !menuItem.isAvailable) {
-        return res.status(404).json({
-          success: false,
-          message: "One or more menu items are not available",
-        });
-      }
-
       const quantity = Number(item.quantity);
 
-      if (!quantity || quantity < 1) {
+      if (!quantity || quantity < 1 || quantity > 50) {
         return res.status(400).json({
           success: false,
-          message: "Item quantity must be at least 1",
+          message: "Item quantity must be between 1 and 50",
         });
       }
 
-      const finalPrice =
-        menuItem.discountPrice && menuItem.discountPrice > 0
-          ? menuItem.discountPrice
-          : menuItem.price;
+      const itemType = item.itemType || "menu";
 
-      subtotal += finalPrice * quantity;
+      if (!["menu", "deal"].includes(itemType)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid item type",
+        });
+      }
 
-      orderItems.push({
-        menuItem: menuItem._id,
-        name: menuItem.name,
-        price: finalPrice,
-        quantity,
-      });
+      if (itemType === "deal") {
+        const deal = await Deal.findById(item.deal);
+
+        if (!deal || !deal.isActive) {
+          return res.status(404).json({
+            success: false,
+            message: "One or more deals are not available",
+          });
+        }
+
+        subtotal += deal.dealPrice * quantity;
+
+        orderItems.push({
+          itemType: "deal",
+          menuItem: null,
+          deal: deal._id,
+          name: deal.title,
+          price: deal.dealPrice,
+          quantity,
+        });
+      } else {
+        const menuItem = await MenuItem.findById(item.menuItem);
+
+        if (!menuItem || !menuItem.isAvailable) {
+          return res.status(404).json({
+            success: false,
+            message: "One or more menu items are not available",
+          });
+        }
+
+        const finalPrice =
+          menuItem.discountPrice && menuItem.discountPrice > 0
+            ? menuItem.discountPrice
+            : menuItem.price;
+
+        subtotal += finalPrice * quantity;
+
+        orderItems.push({
+          itemType: "menu",
+          menuItem: menuItem._id,
+          deal: null,
+          name: menuItem.name,
+          price: finalPrice,
+          quantity,
+        });
+      }
     }
 
-    const deliveryFee = 100;
-    const totalAmount = subtotal + deliveryFee;
+    const deliveryFee = 0;
+    const totalAmount = subtotal;
 
     const order = await Order.create({
       customer: req.user._id,
@@ -94,8 +168,12 @@ const createOrder = async (req, res) => {
         email: req.user.email,
       },
       items: orderItems,
-      deliveryAddress,
-      specialInstructions,
+      deliveryAddress: {
+        addressLine,
+        city,
+        area,
+      },
+      specialInstructions: instructions,
       subtotal,
       deliveryFee,
       totalAmount,
@@ -130,6 +208,7 @@ const getMyOrders = async (req, res) => {
   try {
     const orders = await Order.find({ customer: req.user._id })
       .populate("items.menuItem", "name image")
+      .populate("items.deal", "title image dealPrice")
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -149,10 +228,9 @@ const getMyOrders = async (req, res) => {
 // Customer/Admin: Get single order
 const getOrderById = async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id).populate(
-      "items.menuItem",
-      "name image"
-    );
+    const order = await Order.findById(req.params.id)
+      .populate("items.menuItem", "name image")
+      .populate("items.deal", "title image dealPrice");
 
     if (!order) {
       return res.status(404).json({

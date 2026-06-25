@@ -3,6 +3,7 @@ import { useCart } from "../context/CartContext";
 import PageTransition from "../components/animations/PageTransition";
 import MotionButton from "../components/animations/MotionButton";
 import { motion } from "framer-motion";
+
 function Cart() {
   const navigate = useNavigate();
 
@@ -13,7 +14,6 @@ function Cart() {
     removeFromCart,
     clearCart,
     subtotal,
-    deliveryFee,
     totalAmount,
   } = useCart();
 
@@ -34,26 +34,35 @@ function Cart() {
         <h1>Your Cart</h1>
 
         <div className="cart-list">
-         {cartItems.map((item, index) => (
-  <motion.div
-    className="cart-item"
-    key={item._id}
-    initial={{ opacity: 0, x: -30 }}
-    animate={{ opacity: 1, x: 0 }}
-    transition={{ duration: 0.3, delay: index * 0.07 }}
-  >
+          {cartItems.map((item, index) => (
+            <motion.div
+              className="cart-item"
+              key={item.cartId || item._id}
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.07 }}
+            >
               <div>
                 <h3>{item.name}</h3>
+
+                <p className="cart-type-badge">
+                  {item.itemType === "deal" ? "Hot Deal" : "Menu Item"}
+                </p>
+
                 <p>Rs. {item.price}</p>
                 <p>Quantity: {item.quantity}</p>
               </div>
 
               <div className="cart-actions">
-                <MotionButton onClick={() => decreaseQuantity(item._id)}>-</MotionButton>
+                <MotionButton onClick={() => decreaseQuantity(item.cartId)}>
+                  -
+                </MotionButton>
 
-                <MotionButton onClick={() => increaseQuantity(item._id)}>+</MotionButton>
+                <MotionButton onClick={() => increaseQuantity(item.cartId)}>
+                  +
+                </MotionButton>
 
-                <MotionButton onClick={() => removeFromCart(item._id)}>
+                <MotionButton onClick={() => removeFromCart(item.cartId)}>
                   Remove
                 </MotionButton>
               </div>
@@ -66,9 +75,7 @@ function Cart() {
             <strong>Subtotal:</strong> Rs. {subtotal}
           </p>
 
-          <p>
-            <strong>Delivery Fee:</strong> Rs. {deliveryFee}
-          </p>
+          deliveryFee,
 
           <h2>Total: Rs. {totalAmount}</h2>
 
@@ -88,7 +95,6 @@ function Cart() {
       </div>
     </PageTransition>
   );
-
 }
 
 export default Cart;

@@ -4,6 +4,7 @@ import { useCart } from "../context/CartContext";
 import PageTransition from "../components/animations/PageTransition";
 import { motion } from "framer-motion";
 import MotionButton from "../components/animations/MotionButton";
+import HotDeals from "../components/HotDeals";
 function Menu() {
   const { addToCart, cartItems } = useCart();
 
@@ -77,6 +78,7 @@ function Menu() {
   return (
     <PageTransition>
       <div>
+         <HotDeals />
 
         {notification && (
           <div className="cart-notification">

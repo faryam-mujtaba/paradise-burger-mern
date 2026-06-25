@@ -2,21 +2,36 @@ const mongoose = require("mongoose");
 
 const orderItemSchema = new mongoose.Schema(
   {
+    itemType: {
+      type: String,
+      enum: ["menu", "deal"],
+      default: "menu",
+    },
+
     menuItem: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "MenuItem",
-      required: true,
+      default: null,
     },
+
+    deal: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Deal",
+      default: null,
+    },
+
     name: {
       type: String,
       required: true,
       trim: true,
     },
+
     price: {
       type: Number,
       required: true,
       min: 0,
     },
+
     quantity: {
       type: Number,
       required: true,
@@ -32,14 +47,17 @@ const statusHistorySchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+
     changedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+
     changedAt: {
       type: Date,
       default: Date.now,
     },
+
     note: {
       type: String,
       default: "",
@@ -72,10 +90,12 @@ const orderSchema = new mongoose.Schema(
         type: String,
         required: true,
       },
+
       city: {
         type: String,
         required: true,
       },
+
       area: {
         type: String,
         required: true,

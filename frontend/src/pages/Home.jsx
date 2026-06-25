@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import PageTransition from "../components/animations/PageTransition";
+import HotDeals from "../components/HotDeals";
 
 function Home() {
   return (
@@ -66,6 +67,8 @@ function Home() {
             </motion.div>
           </motion.div>
         </section>
+
+        <HotDeals />
 
         <section className="home-categories">
           <h2>Popular Categories</h2>

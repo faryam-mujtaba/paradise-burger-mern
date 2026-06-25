@@ -14,6 +14,7 @@ const getAllOrders = async (req, res) => {
     const orders = await Order.find(filter)
       .populate("customer", "fullName phone email")
       .populate("items.menuItem", "name image")
+      .populate("items.deal", "title image dealPrice")
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -35,7 +36,8 @@ const getAdminOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
       .populate("customer", "fullName phone email")
-      .populate("items.menuItem", "name image");
+      .populate("items.menuItem", "name image")
+      .populate("items.deal", "title image dealPrice");
 
     if (!order) {
       return res.status(404).json({

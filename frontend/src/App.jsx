@@ -20,7 +20,7 @@ import VerifyEmail from "./pages/VerifyEmail";
 import ResendVerification from "./pages/ResendVerification";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-
+import AdminDealManagement from "./pages/AdminDealManagement";
 function App() {
   return (
     <BrowserRouter>
@@ -91,15 +91,22 @@ function App() {
               </ProtectedRoute>
             }
           />
-
-          <Route
-            path="/admin/categories"
-            element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminCategoryManagement />
-              </ProtectedRoute>
-            }
-          />
+<Route
+  path="/admin/categories"
+  element={
+    <ProtectedRoute allowedRoles={["admin"]}>
+      <AdminCategoryManagement />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/admin/deals"
+  element={
+    <ProtectedRoute allowedRoles={["admin"]}>
+      <AdminDealManagement />
+    </ProtectedRoute>
+  }
+/>
 
           <Route
             path="/change-password"
