@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const generateToken = require("../utils/generateToken");
 const createVerificationToken = require("../utils/createVerificationToken");
+const createPasswordResetToken = require("../utils/createPasswordResetToken");
 const sendEmail = require("../utils/sendEmail");
 const crypto = require("crypto");
 // Register customer
@@ -183,7 +184,7 @@ const verifyEmail = async (req, res) => {
     });
   }
 };
-//esendVerificationEmai
+//resendVerificationEmai
 const resendVerificationEmail = async (req, res) => {
   try {
     const { email } = req.body;
@@ -252,6 +253,157 @@ const resendVerificationEmail = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to resend verification email",
+      error: error.message,
+    });
+  }
+};
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "No account found with this email",
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account is disabled",
+      });
+    }
+
+    const { rawToken, hashedToken, expires } = createPasswordResetToken();
+
+    user.passwordResetToken = hashedToken;
+    user.passwordResetExpires = new Date(expires);
+
+    await user.save();
+
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${rawToken}`;
+
+    await sendEmail({
+      to: user.email,
+      subject: "Reset your Paradise Burger password",
+      text: `Reset your password by opening this link: ${resetUrl}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+          <h2>Paradise Burger Password Reset 🍔</h2>
+          <p>Hello ${user.fullName},</p>
+          <p>You requested to reset your password.</p>
+          <a
+            href="${resetUrl}"
+            target="_blank"
+            style="display:inline-block;padding:10px 16px;background:#d62828;color:white;text-decoration:none;border-radius:6px;"
+          >
+            Reset Password
+          </a>
+          <p>This password reset link will expire in 15 minutes.</p>
+          <p>If you did not request this, please ignore this email.</p>
+        </div>
+      `,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Password reset link sent. Please check your email.",
+    });
+  } catch (error) {
+    console.error("FORGOT PASSWORD ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to send password reset email",
+      error: error.message,
+    });
+  }
+};
+
+//resetPassword
+
+const resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { newPassword, confirmPassword } = req.body;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "Reset token is required",
+      });
+    }
+
+    if (!newPassword || !confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "New password and confirm password are required",
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Passwords do not match",
+      });
+    }
+
+    const passwordRegex =
+      /^(?=.*[A-Z])(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{6,}$/;
+
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Password must be at least 6 characters and include one uppercase letter and one special character",
+      });
+    }
+
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(token.trim())
+      .digest("hex");
+
+    const user = await User.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired password reset link",
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password reset successfully. You can login now.",
+    });
+  } catch (error) {
+    console.error("RESET PASSWORD ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to reset password",
       error: error.message,
     });
   }
@@ -407,6 +559,8 @@ module.exports = {
   registerUser,
   verifyEmail,
   resendVerificationEmail,
+   forgotPassword,
+   resetPassword,
   loginUser,
   getProfile,
   changePassword,

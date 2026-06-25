@@ -8,9 +8,9 @@ function Login() {
   const { login } = useAuth();
 
   const [formData, setFormData] = useState({
-  identifier: "",
-  password: "",
-});
+    identifier: "",
+    password: "",
+  });
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -62,14 +62,14 @@ function Login() {
         {message && <p className="form-message">{message}</p>}
 
         <label>Phone Number or Email</label>
-       <input
-  type="text"
-  name="identifier"
-  placeholder="Enter phone number or email"
-  value={formData.identifier}
-  onChange={handleChange}
-  required
-/>
+        <input
+          type="text"
+          name="identifier"
+          placeholder="Enter phone number or email"
+          value={formData.identifier}
+          onChange={handleChange}
+          required
+        />
 
         <label>Password</label>
         <input
@@ -80,14 +80,17 @@ function Login() {
           onChange={handleChange}
           required
         />
+        <p style={{ marginTop: "8px", textAlign: "right" }}>
+          <Link to="/forgot-password">Forgot Password?</Link>
+        </p>
 
         <button type="submit" disabled={loading}>
           {loading ? "Logging in..." : "Login"}
         </button>
         <p style={{ marginTop: "10px" }}>
-  Did not receive verification email?{" "}
-  <Link to="/resend-verification">Resend Email</Link>
-</p>
+          Did not receive verification email?{" "}
+          <Link to="/resend-verification">Resend Email</Link>
+        </p>
       </form>
     </div>
   );

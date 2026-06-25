@@ -72,6 +72,13 @@ emailVerificationToken: {
 emailVerificationExpires: {
   type: Date,
 },
+passwordResetToken: {
+  type: String,
+},
+
+passwordResetExpires: {
+  type: Date,
+},
     addresses: [addressSchema],
     isActive: {
       type: Boolean,

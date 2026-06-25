@@ -20,6 +20,9 @@ import RiderDashboard from "./pages/RiderDashboard";
 import ChangePassword from "./pages/ChangePassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import ResendVerification from "./pages/ResendVerification";
+
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 function App() {
   return (
     <BrowserRouter>
@@ -122,6 +125,8 @@ function App() {
 />
 <Route path="/verify-email/:token" element={<VerifyEmail />} />
 <Route path="/resend-verification" element={<ResendVerification />} />
+<Route path="/forgot-password" element={<ForgotPassword />} />
+<Route path="/reset-password/:token" element={<ResetPassword />} />
         </Routes>
         
       </main>
