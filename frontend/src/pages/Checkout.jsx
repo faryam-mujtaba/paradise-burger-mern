@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
@@ -74,7 +74,10 @@ function Checkout() {
 
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
-
+    if (user?.role === "customer" && !user?.isEmailVerified) {
+      alert("Please verify your email before placing an order.");
+      return;
+    }
     if (!formData.addressLine || !formData.city || !formData.area) {
       setMessage("Please complete your delivery address.");
       return;

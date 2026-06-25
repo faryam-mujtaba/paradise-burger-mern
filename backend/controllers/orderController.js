@@ -1,6 +1,6 @@
 const Order = require("../models/Order");
 const MenuItem = require("../models/MenuItem");
-
+const User = require("../models/User");
 // Customer: Place order
 const createOrder = async (req, res) => {
   try {
@@ -61,6 +61,25 @@ const createOrder = async (req, res) => {
         quantity,
       });
     }
+    const customerId = req.user?._id || req.user?.id;
+
+const customer = await User.findById(customerId).select(
+  "role isEmailVerified"
+);
+
+if (!customer) {
+  return res.status(404).json({
+    success: false,
+    message: "Customer not found",
+  });
+}
+
+if (customer.role === "customer" && !customer.isEmailVerified) {
+  return res.status(403).json({
+    success: false,
+    message: "Please verify your email before placing an order",
+  });
+}
 
     const deliveryFee = 100;
     const totalAmount = subtotal + deliveryFee;
