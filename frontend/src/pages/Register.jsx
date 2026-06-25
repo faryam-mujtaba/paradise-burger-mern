@@ -1,12 +1,8 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import api from "../services/api";
-import { useAuth } from "../context/AuthContext";
 
 function Register() {
-  const navigate = useNavigate();
-  const { login } = useAuth();
-
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
@@ -17,6 +13,7 @@ function Register() {
     area: "",
   });
 
+  const [successMessage, setSuccessMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -33,6 +30,7 @@ function Register() {
     try {
       setLoading(true);
       setMessage("");
+      setSuccessMessage("");
 
       const payload = {
         fullName: formData.fullName,
@@ -49,12 +47,20 @@ function Register() {
 
       const response = await api.post("/auth/register", payload);
 
-      const user = response.data.data.user;
-      const token = response.data.data.token;
+      setSuccessMessage(
+        response.data.message ||
+          "Registration successful. Verification email sent. Please check your inbox."
+      );
 
-      login(user, token);
-
-      navigate("/menu");
+      setFormData({
+        fullName: "",
+        phone: "",
+        email: "",
+        password: "",
+        addressLine: "",
+        city: "",
+        area: "",
+      });
     } catch (error) {
       setMessage(
         error.response?.data?.message || "Registration failed. Please try again."
@@ -71,6 +77,31 @@ function Register() {
 
         {message && <p className="form-message">{message}</p>}
 
+        {successMessage && (
+          <div className="success-message">
+            <p>{successMessage}</p>
+            <p>
+              Please open your email and click the verification link before
+              placing an order.
+            </p>
+
+            <a
+              href="https://mail.google.com/"
+              target="_blank"
+              rel="noreferrer"
+              className="auth-link"
+            >
+              Open Gmail
+            </a>
+
+            <br />
+
+            <Link to="/login" className="auth-link">
+              Go to Login
+            </Link>
+          </div>
+        )}
+
         <label>Full Name</label>
         <input
           type="text"
@@ -78,6 +109,7 @@ function Register() {
           placeholder="Enter full name"
           value={formData.fullName}
           onChange={handleChange}
+          required
         />
 
         <label>Phone Number</label>
@@ -87,6 +119,7 @@ function Register() {
           placeholder="Enter phone number"
           value={formData.phone}
           onChange={handleChange}
+          required
         />
 
         <label>Email</label>
@@ -96,6 +129,7 @@ function Register() {
           placeholder="Enter email address"
           value={formData.email}
           onChange={handleChange}
+          required
         />
 
         <label>Password</label>
@@ -105,6 +139,7 @@ function Register() {
           placeholder="Minimum 6 characters"
           value={formData.password}
           onChange={handleChange}
+          required
         />
 
         <label>Address</label>

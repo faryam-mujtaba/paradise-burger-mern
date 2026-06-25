@@ -8,9 +8,9 @@ function Login() {
   const { login } = useAuth();
 
   const [formData, setFormData] = useState({
-    phone: "",
-    password: "",
-  });
+  identifier: "",
+  password: "",
+});
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -61,15 +61,15 @@ function Login() {
 
         {message && <p className="form-message">{message}</p>}
 
-        <label>Phone Number</label>
-        <input
-          type="text"
-          name="phone"
-          placeholder="Enter phone number"
-          value={formData.phone}
-          onChange={handleChange}
-          required
-        />
+        <label>Phone Number or Email</label>
+       <input
+  type="text"
+  name="identifier"
+  placeholder="Enter phone number or email"
+  value={formData.identifier}
+  onChange={handleChange}
+  required
+/>
 
         <label>Password</label>
         <input

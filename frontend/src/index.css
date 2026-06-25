@@ -1632,3 +1632,24 @@ a {
     bottom: 12px;
   }
 }
+.success-message {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #e8fff1;
+  border: 1px solid #8be0ad;
+  color: #126b35;
+  font-size: 14px;
+}
+
+.success-message p {
+  margin: 4px 0;
+}
+
+.success-message .auth-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-weight: 600;
+  color: #126b35;
+  text-decoration: underline;
+}

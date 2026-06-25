@@ -188,66 +188,73 @@ const verifyEmail = async (req, res) => {
 };
 // Login user
 const loginUser = async (req, res) => {
-    try {
-        const { phone, password } = req.body;
+  try {
+    const { phone, email, identifier, password } = req.body;
 
-        if (!phone || !password) {
-            return res.status(400).json({
-                success: false,
-                message: "Phone and password are required",
-            });
-        }
+    const loginId = identifier || phone || email;
 
-        const user = await User.findOne({ phone });
-
-        if (!user) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid phone or password",
-            });
-        }
-
-        if (!user.isActive) {
-            return res.status(403).json({
-                success: false,
-                message: "Your account is disabled",
-            });
-        }
-
-        const isPasswordCorrect = await bcrypt.compare(password, user.password);
-
-        if (!isPasswordCorrect) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid phone or password",
-            });
-        }
-
-        const token = generateToken(user._id, user.role);
-
-        return res.status(200).json({
-            success: true,
-            message: "Login successful",
-            data: {
-                user: {
-                    id: user._id,
-                    fullName: user.fullName,
-                    phone: user.phone,
-                    email: user.email,
-                    role: user.role,
-                    isPhoneVerified: user.isPhoneVerified,
-                    isEmailVerified: user.isEmailVerified,
-                },
-                token,
-            },
-        });
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Login failed",
-            error: error.message,
-        });
+    if (!loginId || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Phone/email and password are required",
+      });
     }
+
+    const user = await User.findOne({
+      $or: [
+        { phone: loginId },
+        { email: loginId.toLowerCase() },
+      ],
+    });
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid phone/email or password",
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: "Your account is disabled",
+      });
+    }
+
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordCorrect) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid phone/email or password",
+      });
+    }
+
+    const token = generateToken(user._id, user.role);
+
+    return res.status(200).json({
+      success: true,
+      message: "Login successful",
+      data: {
+        user: {
+          id: user._id,
+          fullName: user.fullName,
+          phone: user.phone,
+          email: user.email,
+          role: user.role,
+          isPhoneVerified: user.isPhoneVerified,
+          isEmailVerified: user.isEmailVerified,
+        },
+        token,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Login failed",
+      error: error.message,
+    });
+  }
 };
 const getProfile = async (req, res) => {
     try {
