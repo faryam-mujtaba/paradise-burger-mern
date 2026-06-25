@@ -1,7 +1,8 @@
 const express = require("express");
 const {
   registerUser,
-   verifyEmail,
+  verifyEmail,
+  resendVerificationEmail,
   loginUser,
   getProfile,
   changePassword,
@@ -13,6 +14,7 @@ const router = express.Router();
 
 router.post("/register", registerUser);
 router.get("/verify-email/:token", verifyEmail);
+router.post("/resend-verification-email", resendVerificationEmail);
 router.post("/login", loginUser);
 router.get("/profile", protect, getProfile);
 router.put("/change-password", protect, changePassword);

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -84,6 +84,10 @@ function Login() {
         <button type="submit" disabled={loading}>
           {loading ? "Logging in..." : "Login"}
         </button>
+        <p style={{ marginTop: "10px" }}>
+  Did not receive verification email?{" "}
+  <Link to="/resend-verification">Resend Email</Link>
+</p>
       </form>
     </div>
   );

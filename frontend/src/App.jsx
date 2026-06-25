@@ -19,6 +19,7 @@ import AdminCategoryManagement from "./pages/AdminCategoryManagement";
 import RiderDashboard from "./pages/RiderDashboard";
 import ChangePassword from "./pages/ChangePassword";
 import VerifyEmail from "./pages/VerifyEmail";
+import ResendVerification from "./pages/ResendVerification";
 function App() {
   return (
     <BrowserRouter>
@@ -120,7 +121,9 @@ function App() {
   }
 />
 <Route path="/verify-email/:token" element={<VerifyEmail />} />
+<Route path="/resend-verification" element={<ResendVerification />} />
         </Routes>
+        
       </main>
     </BrowserRouter>
   );

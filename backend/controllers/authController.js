@@ -130,33 +130,13 @@ const verifyEmail = async (req, res) => {
       });
     }
 
-    const cleanToken = token.trim();
-
     const hashedToken = crypto
       .createHash("sha256")
-      .update(cleanToken)
+      .update(token.trim())
       .digest("hex");
-
-    
-
-    const userByToken = await User.findOne({
-      emailVerificationToken: hashedToken,
-    });
-
-    console.log(
-      "User found by token:",
-      userByToken
-        ? {
-            email: userByToken.email,
-            isEmailVerified: userByToken.isEmailVerified,
-            emailVerificationExpires: userByToken.emailVerificationExpires,
-          }
-        : "No user found with this token"
-    );
 
     const user = await User.findOne({
       emailVerificationToken: hashedToken,
-      emailVerificationExpires: { $gt: new Date() },
     });
 
     if (!user) {
@@ -166,15 +146,32 @@ const verifyEmail = async (req, res) => {
       });
     }
 
-    user.isEmailVerified = true;
-    user.emailVerificationToken = undefined;
-    user.emailVerificationExpires = undefined;
+    if (user.isEmailVerified) {
+      return res.status(200).json({
+        success: true,
+        message: "Email already verified. You can login now.",
+      });
+    }
 
+    if (
+      !user.emailVerificationExpires ||
+      user.emailVerificationExpires < new Date()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Verification link has expired. Please resend verification email.",
+      });
+    }
+
+    user.isEmailVerified = true;
+
+    // Keep hashed token until expiry so double-click / React double-call still shows success.
+    // It cannot verify another account because it belongs only to this user.
     await user.save();
 
     return res.status(200).json({
       success: true,
-      message: "Email verified successfully",
+      message: "Email verified successfully. You can login now.",
     });
   } catch (error) {
     console.error("VERIFY EMAIL ERROR:", error);
@@ -182,6 +179,79 @@ const verifyEmail = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Email verification failed",
+      error: error.message,
+    });
+  }
+};
+//esendVerificationEmai
+const resendVerificationEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "No account found with this email",
+      });
+    }
+
+    if (user.isEmailVerified) {
+      return res.status(400).json({
+        success: false,
+        message: "This email is already verified",
+      });
+    }
+
+    const { rawToken, hashedToken, expires } = createVerificationToken();
+
+    user.emailVerificationToken = hashedToken;
+    user.emailVerificationExpires = new Date(expires);
+
+    await user.save();
+
+    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${rawToken}`;
+
+    await sendEmail({
+      to: user.email,
+      subject: "Verify your Paradise Burger email",
+      text: `Please verify your email by opening this link: ${verificationUrl}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+          <h2>Paradise Burger Email Verification 🍔</h2>
+          <p>Hello ${user.fullName},</p>
+          <p>You requested a new email verification link.</p>
+          <a 
+            href="${verificationUrl}" 
+            target="_blank"
+            style="display:inline-block;padding:10px 16px;background:#d62828;color:white;text-decoration:none;border-radius:6px;"
+          >
+            Verify Email
+          </a>
+          <p>This verification link will expire in 24 hours.</p>
+          <p>If you did not request this, please ignore this email.</p>
+        </div>
+      `,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Verification email sent again. Please check your inbox.",
+    });
+  } catch (error) {
+    console.error("RESEND VERIFICATION EMAIL ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to resend verification email",
       error: error.message,
     });
   }
@@ -200,13 +270,14 @@ const loginUser = async (req, res) => {
       });
     }
 
+    const cleanLoginId = loginId.trim();
+   
     const user = await User.findOne({
       $or: [
-        { phone: loginId },
-        { email: loginId.toLowerCase() },
+        { phone: cleanLoginId },
+        { email: cleanLoginId.toLowerCase() },
       ],
     });
-
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -249,6 +320,8 @@ const loginUser = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("LOGIN ERROR:", error);
+
     return res.status(500).json({
       success: false,
       message: "Login failed",
@@ -333,6 +406,7 @@ if (!passwordRegex.test(newPassword)) {
 module.exports = {
   registerUser,
   verifyEmail,
+  resendVerificationEmail,
   loginUser,
   getProfile,
   changePassword,
