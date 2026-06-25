@@ -18,6 +18,7 @@ import AdminCategoryManagement from "./pages/AdminCategoryManagement";
 
 import RiderDashboard from "./pages/RiderDashboard";
 import ChangePassword from "./pages/ChangePassword";
+import VerifyEmail from "./pages/VerifyEmail";
 function App() {
   return (
     <BrowserRouter>
@@ -118,6 +119,7 @@ function App() {
     </ProtectedRoute>
   }
 />
+<Route path="/verify-email/:token" element={<VerifyEmail />} />
         </Routes>
       </main>
     </BrowserRouter>
