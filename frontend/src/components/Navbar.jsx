@@ -15,13 +15,13 @@ function Navbar() {
     navigate("/login");
   };
 
- return (
-  <motion.nav
-    className="navbar"
-    initial={{ opacity: 0, y: -25 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.45, ease: "easeOut" }}
-  >
+  return (
+    <motion.nav
+      className="navbar"
+      initial={{ opacity: 0, y: -25 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, ease: "easeOut" }}
+    >
       <div className="navbar-logo">
         <Link to="/">Paradise Burger</Link>
       </div>
@@ -46,17 +46,13 @@ function Navbar() {
             <Link to="/admin/dashboard">Dashboard</Link>
             <Link to="/admin/menu">Menu Management</Link>
             <Link to="/admin/categories">Categories</Link>
-            <Link to="/admin/riders">Riders</Link>
           </>
-        )}
-
-        {user?.role === "rider" && (
-          <Link to="/rider/dashboard">Dashboard</Link>
         )}
 
         {user ? (
           <>
-          <Link to="/change-password">Change Password</Link>
+            <Link to="/change-password">Change Password</Link>
+
             <span className="nav-user">
               {user.fullName} ({user.role})
             </span>

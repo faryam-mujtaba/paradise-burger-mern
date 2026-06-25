@@ -55,15 +55,18 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+
     customerSnapshot: {
       fullName: String,
       phone: String,
       email: String,
     },
+
     items: {
       type: [orderItemSchema],
       required: true,
     },
+
     deliveryAddress: {
       addressLine: {
         type: String,
@@ -78,40 +81,48 @@ const orderSchema = new mongoose.Schema(
         required: true,
       },
     },
+
     specialInstructions: {
       type: String,
       trim: true,
       default: "",
     },
+
     subtotal: {
       type: Number,
       required: true,
       min: 0,
     },
+
     deliveryFee: {
       type: Number,
       default: 0,
       min: 0,
     },
+
     totalAmount: {
       type: Number,
       required: true,
       min: 0,
     },
+
     paymentMethod: {
       type: String,
       enum: ["Cash on Delivery", "Online Payment"],
       default: "Cash on Delivery",
     },
+
     paymentStatus: {
       type: String,
       enum: ["Pending", "Paid", "Failed", "Refunded"],
       default: "Pending",
     },
+
     transactionId: {
       type: String,
       default: "",
     },
+
     orderStatus: {
       type: String,
       enum: [
@@ -119,25 +130,17 @@ const orderSchema = new mongoose.Schema(
         "Accepted",
         "Preparing",
         "Ready",
-        "Assigned to Rider",
-        "Picked Up",
-        "Out for Delivery",
         "Delivered",
         "Rejected",
         "Cancelled",
-        "Failed Delivery",
       ],
       default: "Pending",
     },
-    assignedRider: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      default: null,
-    },
+
     statusHistory: [statusHistorySchema],
+
     acceptedAt: Date,
     preparedAt: Date,
-    pickedUpAt: Date,
     deliveredAt: Date,
   },
   {

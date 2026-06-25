@@ -8,8 +8,6 @@ function AdminDashboard() {
   const { user, token } = useAuth();
 
   const [orders, setOrders] = useState([]);
-  const [riders, setRiders] = useState([]);
-  const [selectedRiders, setSelectedRiders] = useState({});
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
@@ -32,24 +30,9 @@ function AdminDashboard() {
     }
   };
 
-  const fetchRiders = async () => {
-    try {
-      const response = await api.get("/admin/riders", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      setRiders(response.data.data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
   useEffect(() => {
     if (user?.role === "admin") {
       fetchOrders();
-      fetchRiders();
     } else {
       setLoading(false);
     }
@@ -114,43 +97,6 @@ function AdminDashboard() {
     }
   };
 
-  const assignRider = async (orderId) => {
-    const riderId = selectedRiders[orderId];
-
-    if (!riderId) {
-      alert("Please select a rider first.");
-      return;
-    }
-
-    try {
-      await api.put(
-        `/admin/orders/${orderId}/assign-rider`,
-        {
-          riderId,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      setSelectedRiders({
-        ...selectedRiders,
-        [orderId]: "",
-      });
-
-      fetchOrders();
-      fetchRiders();
-    } catch (error) {
-      alert(error.response?.data?.message || "Failed to assign rider.");
-    }
-  };
-
-  const availableRiders = riders.filter(
-    (rider) => rider.isAvailable && rider.isActive
-  );
-
   if (!user || user.role !== "admin") {
     return (
       <div className="checkout-message-box">
@@ -170,7 +116,7 @@ function AdminDashboard() {
       <div className="admin-header">
         <div>
           <h1>Admin Orders Dashboard</h1>
-          <p>Manage customer orders and assign riders.</p>
+          <p>Manage customer orders and keep the delivery flow moving.</p>
         </div>
 
         <div className="admin-header-actions">
@@ -180,15 +126,11 @@ function AdminDashboard() {
           <Link to="/admin/categories" className="admin-link-btn">
             Manage Categories
           </Link>
-          <Link to="/admin/riders" className="admin-link-btn">
-            Manage Riders
-          </Link>
 
           <button
             className="admin-refresh-btn"
             onClick={() => {
               fetchOrders();
-              fetchRiders();
             }}
           >
             Refresh
@@ -202,10 +144,6 @@ function AdminDashboard() {
           <span>{orders.length}</span>
         </div>
 
-        <div>
-          <strong>Available Riders</strong>
-          <span>{availableRiders.length}</span>
-        </div>
       </div>
 
       {message && <p className="form-message">{message}</p>}
@@ -277,13 +215,6 @@ function AdminDashboard() {
                 </p>
               )}
 
-              {order.assignedRider && (
-                <p className="assigned-rider-text">
-                  <strong>Assigned Rider:</strong>{" "}
-                  {order.assignedRider.fullName || "Rider assigned"}
-                </p>
-              )}
-
               <div className="admin-order-actions">
                 {order.orderStatus === "Pending" && (
                   <>
@@ -325,7 +256,7 @@ function AdminDashboard() {
                       updateStatus(
                         order._id,
                         "Ready",
-                        "Order is ready for rider assignment"
+                        "Order is ready for delivery"
                       )
                     }
                   >
@@ -334,39 +265,18 @@ function AdminDashboard() {
                 )}
 
                 {order.orderStatus === "Ready" && (
-                  <div className="rider-assign-box">
-                    <select
-                      value={selectedRiders[order._id] || ""}
-                      onChange={(e) =>
-                        setSelectedRiders({
-                          ...selectedRiders,
-                          [order._id]: e.target.value,
-                        })
-                      }
-                    >
-                      <option value="">Select available rider</option>
-
-                      {availableRiders.map((rider) => (
-                        <option key={rider._id} value={rider._id}>
-                          {rider.user?.fullName || rider.user?.name || "Rider"} —{" "}
-                          {rider.bikeNumberPlate}
-                        </option>
-                      ))}
-                    </select>
-
-                    <button
-                      className="assign-btn"
-                      onClick={() => assignRider(order._id)}
-                    >
-                      Assign Rider
-                    </button>
-                  </div>
-                )}
-
-                {order.orderStatus === "Assigned to Rider" && (
-                  <p className="assigned-rider-text">
-                    Order assigned and waiting for rider pickup.
-                  </p>
+                  <button
+                    className="ready-btn"
+                    onClick={() =>
+                      updateStatus(
+                        order._id,
+                        "Delivered",
+                        "Order marked delivered by admin"
+                      )
+                    }
+                  >
+                    Mark Delivered
+                  </button>
                 )}
 
                 {order.orderStatus === "Delivered" && (

@@ -43,8 +43,6 @@ function Login() {
 
       if (user.role === "admin") {
         navigate("/admin/dashboard");
-      } else if (user.role === "rider") {
-        navigate("/rider/dashboard");
       } else {
         navigate("/menu");
       }

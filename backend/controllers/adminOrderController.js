@@ -1,5 +1,4 @@
 const Order = require("../models/Order");
-const RiderProfile = require("../models/RiderProfile");
 
 // Admin: Get all orders
 const getAllOrders = async (req, res) => {
@@ -15,7 +14,6 @@ const getAllOrders = async (req, res) => {
     const orders = await Order.find(filter)
       .populate("customer", "fullName phone email")
       .populate("items.menuItem", "name image")
-      .populate("assignedRider", "fullName phone")
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -37,8 +35,7 @@ const getAdminOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
       .populate("customer", "fullName phone email")
-      .populate("items.menuItem", "name image")
-      .populate("assignedRider", "fullName phone");
+      .populate("items.menuItem", "name image");
 
     if (!order) {
       return res.status(404).json({
@@ -156,13 +153,11 @@ const updateOrderStatus = async (req, res) => {
     const { status, note } = req.body;
 
     const allowedStatuses = [
+      "Accepted",
       "Preparing",
       "Ready",
-      "Assigned to Rider",
-      "Picked Up",
-      "Out for Delivery",
       "Delivered",
-      "Failed Delivery",
+      "Cancelled",
     ];
 
     if (!status || !allowedStatuses.includes(status)) {
@@ -181,18 +176,21 @@ const updateOrderStatus = async (req, res) => {
       });
     }
 
+    if (["Rejected", "Cancelled", "Delivered"].includes(order.orderStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: `Order is already ${order.orderStatus}`,
+      });
+    }
+
     order.orderStatus = status;
 
-    if (status === "Preparing") {
-      order.preparedAt = undefined;
+    if (status === "Accepted") {
+      order.acceptedAt = order.acceptedAt || new Date();
     }
 
     if (status === "Ready") {
       order.preparedAt = new Date();
-    }
-
-    if (status === "Picked Up") {
-      order.pickedUpAt = new Date();
     }
 
     if (status === "Delivered") {
@@ -220,106 +218,11 @@ const updateOrderStatus = async (req, res) => {
     });
   }
 };
-// Admin: Assign ready order to rider
-const assignOrderToRider = async (req, res) => {
-  try {
-    const { riderId } = req.body;
 
-    if (!riderId) {
-      return res.status(400).json({
-        success: false,
-        message: "Rider ID is required",
-      });
-    }
-
-    const order = await Order.findById(req.params.id);
-
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found",
-      });
-    }
-
-    if (order.orderStatus !== "Ready") {
-      return res.status(400).json({
-        success: false,
-        message: "Only ready orders can be assigned to riders",
-      });
-    }
-
-    const riderProfile = await RiderProfile.findById(riderId).populate(
-      "user",
-      "fullName phone email role isActive"
-    );
-
-    if (!riderProfile || !riderProfile.user) {
-      return res.status(404).json({
-        success: false,
-        message: "Rider not found",
-      });
-    }
-
-    if (riderProfile.user.role !== "rider") {
-      return res.status(400).json({
-        success: false,
-        message: "Selected user is not a rider",
-      });
-    }
-
-    if (!riderProfile.isActive || !riderProfile.user.isActive) {
-      return res.status(400).json({
-        success: false,
-        message: "This rider is inactive and cannot be assigned",
-      });
-    }
-
-    if (!riderProfile.isAvailable) {
-      return res.status(400).json({
-        success: false,
-        message: "This rider is not available",
-      });
-    }
-
-    order.assignedRider = riderProfile.user._id;
-    order.orderStatus = "Assigned to Rider";
-
-    order.statusHistory.push({
-      status: "Assigned to Rider",
-      changedBy: req.user._id,
-      note: `Order assigned to rider ${riderProfile.user.fullName}`,
-    });
-
-    riderProfile.isAvailable = false;
-
-    if (typeof riderProfile.totalAssignedOrders === "number") {
-      riderProfile.totalAssignedOrders += 1;
-    }
-
-    await order.save();
-    await riderProfile.save();
-
-    return res.status(200).json({
-      success: true,
-      message: "Order assigned to rider successfully",
-      data: {
-        order,
-        riderProfile,
-      },
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to assign order to rider",
-      error: error.message,
-    });
-  }
-};
 module.exports = {
   getAllOrders,
   getAdminOrderById,
   acceptOrder,
   rejectOrder,
   updateOrderStatus,
-  assignOrderToRider,
 };

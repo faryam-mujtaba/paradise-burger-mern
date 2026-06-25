@@ -13,10 +13,8 @@ import MyOrders from "./pages/MyOrders";
 
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminMenuManagement from "./pages/AdminMenuManagement";
-import AdminRiderManagement from "./pages/AdminRiderManagement";
 import AdminCategoryManagement from "./pages/AdminCategoryManagement";
 
-import RiderDashboard from "./pages/RiderDashboard";
 import ChangePassword from "./pages/ChangePassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import ResendVerification from "./pages/ResendVerification";
@@ -104,27 +102,9 @@ function App() {
           />
 
           <Route
-            path="/admin/riders"
-            element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminRiderManagement />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/rider/dashboard"
-            element={
-              <ProtectedRoute allowedRoles={["rider"]}>
-                <RiderDashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
             path="/change-password"
             element={
-              <ProtectedRoute allowedRoles={["customer", "admin", "rider"]}>
+              <ProtectedRoute allowedRoles={["customer", "admin"]}>
                 <ChangePassword />
               </ProtectedRoute>
             }
