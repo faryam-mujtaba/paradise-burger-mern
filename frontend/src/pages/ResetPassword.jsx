@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import api from "../services/api";
-import PageTransition from "../components/animations/PageTransition";
 
 const ResetPassword = () => {
   const { token } = useParams();
@@ -55,48 +54,51 @@ const ResetPassword = () => {
   };
 
   return (
-    <PageTransition>
-      <div className="form-page">
-        <form className="auth-form" onSubmit={handleResetPassword}>
-          <h1>Reset Password</h1>
+    <div className="form-page">
+      <form className="auth-form" onSubmit={handleResetPassword}>
+        <h1>Reset Password</h1>
 
-          {message && <p className="form-message">{message}</p>}
+        {message && <p className="form-message">{message}</p>}
 
-          {successMessage && (
-            <div className="success-message">
-              <p>{successMessage}</p>
-              <Link to="/login" className="auth-link">
-                Go to Login
-              </Link>
-            </div>
-          )}
+        {successMessage && (
+          <div className="success-message">
+            <p>{successMessage}</p>
 
-          <label>New Password</label>
-          <input
-            type="password"
-            name="newPassword"
-            placeholder="Example: NewTest@123"
-            value={formData.newPassword}
-            onChange={handleChange}
-            required
-          />
+            <Link to="/login" className="auth-link">
+              Go to Login
+            </Link>
+          </div>
+        )}
 
-          <label>Confirm Password</label>
-          <input
-            type="password"
-            name="confirmPassword"
-            placeholder="Confirm new password"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            required
-          />
+        <label>New Password</label>
+        <input
+          type="password"
+          name="newPassword"
+          placeholder="Example: NewTest@123"
+          value={formData.newPassword}
+          onChange={handleChange}
+          required
+        />
 
-          <button type="submit" disabled={loading}>
-            {loading ? "Resetting..." : "Reset Password"}
-          </button>
-        </form>
-      </div>
-    </PageTransition>
+        <label>Confirm Password</label>
+        <input
+          type="password"
+          name="confirmPassword"
+          placeholder="Confirm new password"
+          value={formData.confirmPassword}
+          onChange={handleChange}
+          required
+        />
+
+        <button type="submit" disabled={loading}>
+          {loading ? "Resetting..." : "Reset Password"}
+        </button>
+
+        <p style={{ marginTop: "10px" }}>
+          Remember password? <Link to="/login">Back to Login</Link>
+        </p>
+      </form>
+    </div>
   );
 };
 

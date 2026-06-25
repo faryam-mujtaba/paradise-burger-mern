@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
-
+import toast from "react-hot-toast";
 function Register() {
   const [formData, setFormData] = useState({
     fullName: "",
@@ -47,10 +47,10 @@ function Register() {
 
       const response = await api.post("/auth/register", payload);
 
-      setSuccessMessage(
-        response.data.message ||
-          "Registration successful. Verification email sent. Please check your inbox."
-      );
+      toast.success(
+  response.data.message ||
+    "Registration successful. Verification email sent."
+);
 
       setFormData({
         fullName: "",
@@ -62,9 +62,9 @@ function Register() {
         area: "",
       });
     } catch (error) {
-      setMessage(
-        error.response?.data?.message || "Registration failed. Please try again."
-      );
+     toast.error(
+  error.response?.data?.message || "Registration failed. Please try again."
+);
     } finally {
       setLoading(false);
     }

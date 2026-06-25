@@ -29,14 +29,17 @@ function Login() {
       setLoading(true);
       setMessage("");
 
-      const response = await api.post("/auth/login", formData);
+      const response = await api.post("/auth/login", {
+        identifier: formData.identifier,
+        password: formData.password,
+      });
 
       const user = response.data.data.user;
       const token = response.data.data.token;
 
       login(user, token);
 
-      setMessage("Login successful");
+      setMessage(response.data.message || "Login successful");
 
       if (user.role === "admin") {
         navigate("/admin/dashboard");
@@ -80,16 +83,23 @@ function Login() {
           onChange={handleChange}
           required
         />
-        <p style={{ marginTop: "8px", textAlign: "right" }}>
-          <Link to="/forgot-password">Forgot Password?</Link>
-        </p>
 
         <button type="submit" disabled={loading}>
           {loading ? "Logging in..." : "Login"}
         </button>
+
         <p style={{ marginTop: "10px" }}>
           Did not receive verification email?{" "}
           <Link to="/resend-verification">Resend Email</Link>
+        </p>
+
+        <p style={{ marginTop: "8px" }}>
+          Forgot your password?{" "}
+          <Link to="/forgot-password">Forgot Password</Link>
+        </p>
+
+        <p style={{ marginTop: "8px" }}>
+          Do not have an account? <Link to="/register">Register</Link>
         </p>
       </form>
     </div>

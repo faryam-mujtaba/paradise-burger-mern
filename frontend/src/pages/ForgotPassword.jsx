@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
-import PageTransition from "../components/animations/PageTransition";
 
-const ForgotPassword = () => {
-  const [email, setEmail] = useState("");
+function ForgotPassword() {
+  const [identifier, setIdentifier] = useState("");
   const [message, setMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,7 +17,7 @@ const ForgotPassword = () => {
       setSuccessMessage("");
 
       const response = await api.post("/auth/forgot-password", {
-        email,
+        identifier,
       });
 
       setSuccessMessage(
@@ -26,11 +25,11 @@ const ForgotPassword = () => {
           "Password reset link sent. Please check your email."
       );
 
-      setEmail("");
+      setIdentifier("");
     } catch (error) {
       setMessage(
         error.response?.data?.message ||
-          "Failed to send password reset link. Please try again."
+          "Forgot password backend is not ready yet."
       );
     } finally {
       setLoading(false);
@@ -38,52 +37,46 @@ const ForgotPassword = () => {
   };
 
   return (
-    <PageTransition>
-      <div className="form-page">
-        <form className="auth-form" onSubmit={handleForgotPassword}>
-          <h1>Forgot Password</h1>
+    <div className="form-page">
+      <form className="auth-form" onSubmit={handleForgotPassword}>
+        <h1>Forgot Password</h1>
 
-          {message && <p className="form-message">{message}</p>}
+        {message && <p className="form-message">{message}</p>}
 
-          {successMessage && (
-            <div className="success-message">
-              <p>{successMessage}</p>
-              <p>
-                Open your email and click the reset password link within 15
-                minutes.
-              </p>
+        {successMessage && (
+          <div className="success-message">
+            <p>{successMessage}</p>
 
-              <a
-                href="https://mail.google.com/"
-                target="_blank"
-                rel="noreferrer"
-                className="auth-link"
-              >
-                Open Gmail
-              </a>
-            </div>
-          )}
+            <a
+              href="https://mail.google.com/"
+              target="_blank"
+              rel="noreferrer"
+              className="auth-link"
+            >
+              Open Gmail
+            </a>
+          </div>
+        )}
 
-          <label>Email</label>
-          <input
-            type="email"
-            placeholder="Enter your registered email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+        <label>Email or Phone Number</label>
+        <input
+          type="text"
+          placeholder="Enter your email or phone number"
+          value={identifier}
+          onChange={(e) => setIdentifier(e.target.value)}
+          required
+        />
 
-          <button type="submit" disabled={loading}>
-            {loading ? "Sending..." : "Send Reset Link"}
-          </button>
+        <button type="submit" disabled={loading}>
+          {loading ? "Sending..." : "Send Reset Link"}
+        </button>
 
-          <p style={{ marginTop: "12px" }}>
-            Remember password? <Link to="/login">Login</Link>
-          </p>
-        </form>
-      </div>
-    </PageTransition>
+        <p style={{ marginTop: "10px" }}>
+          Remember password? <Link to="/login">Back to Login</Link>
+        </p>
+      </form>
+    </div>
   );
-};
+}
 
 export default ForgotPassword;

@@ -1,10 +1,13 @@
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 const User = require("../models/User");
 const generateToken = require("../utils/generateToken");
 const createVerificationToken = require("../utils/createVerificationToken");
-const createPasswordResetToken = require("../utils/createPasswordResetToken");
 const sendEmail = require("../utils/sendEmail");
-const crypto = require("crypto");
+
+const passwordRegex =
+  /^(?=.*[A-Z])(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{6,}$/;
+
 // Register customer
 const registerUser = async (req, res) => {
   let createdUser = null;
@@ -20,7 +23,7 @@ const registerUser = async (req, res) => {
     }
 
     const existingUser = await User.findOne({
-      $or: [{ phone }, { email }],
+      $or: [{ phone }, { email: email.toLowerCase() }],
     });
 
     if (existingUser) {
@@ -34,13 +37,12 @@ const registerUser = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const { rawToken, hashedToken, expires } = createVerificationToken();
 
     createdUser = await User.create({
       fullName,
       phone,
-      email,
+      email: email.toLowerCase(),
       password: hashedPassword,
       role: "customer",
       isPhoneVerified: false,
@@ -104,7 +106,8 @@ const registerUser = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("REGISTER EMAIL ERROR:", error);
+    console.error("REGISTER ERROR:", error);
+
     if (createdUser && createdUser._id) {
       await User.deleteOne({ _id: createdUser._id });
     }
@@ -118,8 +121,7 @@ const registerUser = async (req, res) => {
   }
 };
 
-//email verification
-
+// Verify email
 const verifyEmail = async (req, res) => {
   try {
     const { token } = req.params;
@@ -138,6 +140,7 @@ const verifyEmail = async (req, res) => {
 
     const user = await User.findOne({
       emailVerificationToken: hashedToken,
+      emailVerificationExpires: { $gt: new Date() },
     });
 
     if (!user) {
@@ -147,27 +150,10 @@ const verifyEmail = async (req, res) => {
       });
     }
 
-    if (user.isEmailVerified) {
-      return res.status(200).json({
-        success: true,
-        message: "Email already verified. You can login now.",
-      });
-    }
-
-    if (
-      !user.emailVerificationExpires ||
-      user.emailVerificationExpires < new Date()
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Verification link has expired. Please resend verification email.",
-      });
-    }
-
     user.isEmailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
 
-    // Keep hashed token until expiry so double-click / React double-call still shows success.
-    // It cannot verify another account because it belongs only to this user.
     await user.save();
 
     return res.status(200).json({
@@ -184,7 +170,8 @@ const verifyEmail = async (req, res) => {
     });
   }
 };
-//resendVerificationEmai
+
+// Resend verification email
 const resendVerificationEmail = async (req, res) => {
   try {
     const { email } = req.body;
@@ -257,23 +244,29 @@ const resendVerificationEmail = async (req, res) => {
     });
   }
 };
+
+// Forgot password
 const forgotPassword = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { identifier } = req.body;
 
-    if (!email) {
+    if (!identifier) {
       return res.status(400).json({
         success: false,
-        message: "Email is required",
+        message: "Email or phone number is required",
       });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const cleanIdentifier = identifier.trim().toLowerCase();
+
+    const user = await User.findOne({
+      $or: [{ email: cleanIdentifier }, { phone: cleanIdentifier }],
+    });
 
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "No account found with this email",
+        message: "No account found with this email or phone number",
       });
     }
 
@@ -284,10 +277,22 @@ const forgotPassword = async (req, res) => {
       });
     }
 
-    const { rawToken, hashedToken, expires } = createPasswordResetToken();
+    if (!user.email) {
+      return res.status(400).json({
+        success: false,
+        message: "This account does not have an email for password reset",
+      });
+    }
+
+    const rawToken = crypto.randomBytes(32).toString("hex");
+
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(rawToken)
+      .digest("hex");
 
     user.passwordResetToken = hashedToken;
-    user.passwordResetExpires = new Date(expires);
+    user.passwordResetExpires = new Date(Date.now() + 15 * 60 * 1000);
 
     await user.save();
 
@@ -330,8 +335,7 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-//resetPassword
-
+// Reset password
 const resetPassword = async (req, res) => {
   try {
     const { token } = req.params;
@@ -358,9 +362,6 @@ const resetPassword = async (req, res) => {
       });
     }
 
-    const passwordRegex =
-      /^(?=.*[A-Z])(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{6,}$/;
-
     if (!passwordRegex.test(newPassword)) {
       return res.status(400).json({
         success: false,
@@ -386,9 +387,7 @@ const resetPassword = async (req, res) => {
       });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
-
+    user.password = await bcrypt.hash(newPassword, 10);
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
 
@@ -408,6 +407,7 @@ const resetPassword = async (req, res) => {
     });
   }
 };
+
 // Login user
 const loginUser = async (req, res) => {
   try {
@@ -423,13 +423,11 @@ const loginUser = async (req, res) => {
     }
 
     const cleanLoginId = loginId.trim();
-   
+
     const user = await User.findOne({
-      $or: [
-        { phone: cleanLoginId },
-        { email: cleanLoginId.toLowerCase() },
-      ],
+      $or: [{ phone: cleanLoginId }, { email: cleanLoginId.toLowerCase() }],
     });
+
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -481,23 +479,27 @@ const loginUser = async (req, res) => {
     });
   }
 };
+
+// Get profile
 const getProfile = async (req, res) => {
-    try {
-        return res.status(200).json({
-            success: true,
-            message: "Profile fetched successfully",
-            data: {
-                user: req.user,
-            },
-        });
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Failed to fetch profile",
-            error: error.message,
-        });
-    }
+  try {
+    return res.status(200).json({
+      success: true,
+      message: "Profile fetched successfully",
+      data: {
+        user: req.user,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch profile",
+      error: error.message,
+    });
+  }
 };
+
+// Change password
 const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -509,16 +511,13 @@ const changePassword = async (req, res) => {
       });
     }
 
-    const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{6,}$/;
-
-if (!passwordRegex.test(newPassword)) {
-  return res.status(400).json({
-    success: false,
-    message:
-      "New password must be at least 6 characters and include one uppercase letter and one special character",
-  });
-}
-    
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "New password must be at least 6 characters and include one uppercase letter and one special character",
+      });
+    }
 
     const user = await User.findById(req.user._id);
 
@@ -538,8 +537,7 @@ if (!passwordRegex.test(newPassword)) {
       });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
+    user.password = await bcrypt.hash(newPassword, 10);
 
     await user.save();
 
@@ -555,12 +553,13 @@ if (!passwordRegex.test(newPassword)) {
     });
   }
 };
+
 module.exports = {
   registerUser,
   verifyEmail,
   resendVerificationEmail,
-   forgotPassword,
-   resetPassword,
+  forgotPassword,
+  resetPassword,
   loginUser,
   getProfile,
   changePassword,

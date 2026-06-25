@@ -20,9 +20,9 @@ import RiderDashboard from "./pages/RiderDashboard";
 import ChangePassword from "./pages/ChangePassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import ResendVerification from "./pages/ResendVerification";
-
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+
 function App() {
   return (
     <BrowserRouter>
@@ -34,6 +34,11 @@ function App() {
           <Route path="/menu" element={<Menu />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+
+          <Route path="/verify-email/:token" element={<VerifyEmail />} />
+          <Route path="/resend-verification" element={<ResendVerification />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
 
           <Route
             path="/cart"
@@ -90,19 +95,19 @@ function App() {
           />
 
           <Route
-            path="/admin/riders"
+            path="/admin/categories"
             element={
               <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminRiderManagement />
+                <AdminCategoryManagement />
               </ProtectedRoute>
             }
           />
 
           <Route
-            path="/admin/categories"
+            path="/admin/riders"
             element={
               <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminCategoryManagement />
+                <AdminRiderManagement />
               </ProtectedRoute>
             }
           />
@@ -115,20 +120,16 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
-  path="/change-password"
-  element={
-    <ProtectedRoute allowedRoles={["customer", "admin", "rider"]}>
-      <ChangePassword />
-    </ProtectedRoute>
-  }
-/>
-<Route path="/verify-email/:token" element={<VerifyEmail />} />
-<Route path="/resend-verification" element={<ResendVerification />} />
-<Route path="/forgot-password" element={<ForgotPassword />} />
-<Route path="/reset-password/:token" element={<ResetPassword />} />
+            path="/change-password"
+            element={
+              <ProtectedRoute allowedRoles={["customer", "admin", "rider"]}>
+                <ChangePassword />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
-        
       </main>
     </BrowserRouter>
   );

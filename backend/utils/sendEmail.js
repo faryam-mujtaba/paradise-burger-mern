@@ -23,15 +23,7 @@ const sendEmail = async ({ to, subject, text, html }) => {
     html,
   };
 
-  const info = await transporter.sendMail(mailOptions);
-
-  console.log("EMAIL SENT SUCCESSFULLY");
-  console.log("To:", to);
-  console.log("Subject:", subject);
-  console.log("Accepted:", info.accepted);
-  console.log("Rejected:", info.rejected);
-
-  return info;
+  await transporter.sendMail(mailOptions);
 };
 
 module.exports = sendEmail;
