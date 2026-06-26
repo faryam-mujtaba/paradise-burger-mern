@@ -180,6 +180,7 @@ const createOrder = async (req, res) => {
       paymentMethod: "Cash on Delivery",
       paymentStatus: "Pending",
       orderStatus: "Pending",
+      hiddenForCustomer: false,
       statusHistory: [
         {
           status: "Pending",
@@ -195,6 +196,8 @@ const createOrder = async (req, res) => {
       data: order,
     });
   } catch (error) {
+    console.error("CREATE ORDER ERROR:", error);
+
     return res.status(500).json({
       success: false,
       message: "Failed to place order",
@@ -206,7 +209,12 @@ const createOrder = async (req, res) => {
 // Customer: Get my orders
 const getMyOrders = async (req, res) => {
   try {
-    const orders = await Order.find({ customer: req.user._id })
+    const orders = await Order.find({
+      customer: req.user._id,
+
+      // This also shows old orders where hiddenForCustomer field does not exist
+      hiddenForCustomer: { $ne: true },
+    })
       .populate("items.menuItem", "name image")
       .populate("items.deal", "title image dealPrice")
       .sort({ createdAt: -1 });
@@ -217,6 +225,8 @@ const getMyOrders = async (req, res) => {
       data: orders,
     });
   } catch (error) {
+    console.error("GET MY ORDERS ERROR:", error);
+
     return res.status(500).json({
       success: false,
       message: "Failed to fetch orders",
@@ -225,7 +235,47 @@ const getMyOrders = async (req, res) => {
   }
 };
 
-// Customer/Admin: Get single order
+// Customer: Hide completed order from My Orders
+const hideMyOrder = async (req, res) => {
+  try {
+    const order = await Order.findOne({
+      _id: req.params.id,
+      customer: req.user._id,
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found.",
+      });
+    }
+
+    if (!["Delivered", "Rejected", "Cancelled"].includes(order.orderStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: "Only completed orders can be removed from your list.",
+      });
+    }
+
+    order.hiddenForCustomer = true;
+    await order.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Order removed from your list.",
+    });
+  } catch (error) {
+    console.error("HIDE MY ORDER ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to remove order.",
+      error: error.message,
+    });
+  }
+};
+
+// Customer/Admin/Subadmin: Get single order
 const getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
@@ -240,9 +290,9 @@ const getOrderById = async (req, res) => {
     }
 
     const isOrderOwner = order.customer.toString() === req.user._id.toString();
-    const isAdmin = req.user.role === "admin";
+    const isAdminOrSubadmin = ["admin", "subadmin"].includes(req.user.role);
 
-    if (!isOrderOwner && !isAdmin) {
+    if (!isOrderOwner && !isAdminOrSubadmin) {
       return res.status(403).json({
         success: false,
         message: "Access denied",
@@ -255,6 +305,8 @@ const getOrderById = async (req, res) => {
       data: order,
     });
   } catch (error) {
+    console.error("GET ORDER BY ID ERROR:", error);
+
     return res.status(500).json({
       success: false,
       message: "Failed to fetch order",
@@ -305,6 +357,8 @@ const cancelOrder = async (req, res) => {
       data: order,
     });
   } catch (error) {
+    console.error("CANCEL ORDER ERROR:", error);
+
     return res.status(500).json({
       success: false,
       message: "Failed to cancel order",
@@ -318,4 +372,5 @@ module.exports = {
   getMyOrders,
   getOrderById,
   cancelOrder,
+  hideMyOrder,
 };

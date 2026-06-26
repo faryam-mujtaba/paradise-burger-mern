@@ -1,0 +1,123 @@
+.confirm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(15, 10, 10, 0.58);
+  backdrop-filter: blur(6px);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+}
+
+.confirm-modal-box {
+  width: 100%;
+  max-width: 430px;
+  background: #fff8ec;
+  border: 2px solid #ffb300;
+  border-radius: 26px;
+  padding: 30px 26px;
+  text-align: center;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+  animation: confirmPop 0.25s ease;
+}
+
+.confirm-modal-icon {
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 15px;
+  border-radius: 50%;
+  background: #ffb300;
+  color: #111827;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 30px;
+  font-weight: 900;
+}
+
+.confirm-modal-box h2 {
+  margin: 0 0 10px;
+  color: #d62828;
+  font-size: 26px;
+  font-weight: 1000;
+}
+
+.confirm-modal-box p {
+  margin: 0;
+  color: #374151;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.confirm-modal-actions {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.confirm-cancel-btn,
+.confirm-main-btn {
+  border: none;
+  border-radius: 16px;
+  padding: 12px 22px;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: 0.25s ease;
+}
+
+.confirm-cancel-btn {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.confirm-cancel-btn:hover {
+  background: #d1d5db;
+  transform: translateY(-2px);
+}
+
+.confirm-main-btn {
+  background: #d62828;
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(214, 40, 40, 0.22);
+}
+
+.confirm-main-btn:hover {
+  background: #b91c1c;
+  transform: translateY(-2px);
+}
+
+@keyframes confirmPop {
+  from {
+    opacity: 0;
+    transform: translateY(-15px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 520px) {
+  .confirm-modal-box {
+    padding: 26px 20px;
+  }
+
+  .confirm-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .confirm-cancel-btn,
+  .confirm-main-btn {
+    width: 100%;
+  }
+}

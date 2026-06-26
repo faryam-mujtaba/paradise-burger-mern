@@ -3,60 +3,100 @@ import api from "../services/api";
 import PageTransition from "../components/animations/PageTransition";
 import MotionButton from "../components/animations/MotionButton";
 import { useNotification } from "../context/NotificationContext";
+
 function SubAdminOrders() {
   const [orders, setOrders] = useState([]);
   const [statusFilter, setStatusFilter] = useState("");
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
-const { showNotification } = useNotification();
-  const fetchOrders = async () => {
+
+  const { showNotification } = useNotification();
+
+  const fetchOrders = async (silent = false) => {
     try {
-      setLoading(true);
-      setMessage("");
+      if (!silent) {
+        setLoading(true);
+      }
 
       const url = statusFilter
-        ? `/admin/orders?status=${statusFilter}`
+        ? `/admin/orders?status=${encodeURIComponent(statusFilter)}`
         : "/admin/orders";
 
       const response = await api.get(url);
       setOrders(response.data.data || []);
     } catch (error) {
       console.error("FETCH SUB ADMIN ORDERS ERROR:", error);
-      setMessage(error.response?.data?.message || "Failed to load orders");
+
+      if (!silent) {
+        showNotification(
+          "Error",
+          "error",
+          error.response?.data?.message || "Failed to load orders"
+        );
+      }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchOrders();
+    fetchOrders(false);
+
+    const handleOrdersChanged = () => {
+      fetchOrders(true);
+    };
+
+    window.addEventListener("ordersChanged", handleOrdersChanged);
+
+    const interval = setInterval(() => {
+      fetchOrders(true);
+    }, 5000);
+
+    return () => {
+      window.removeEventListener("ordersChanged", handleOrdersChanged);
+      clearInterval(interval);
+    };
   }, [statusFilter]);
 
   const acceptOrder = async (orderId) => {
     try {
-      setMessage("");
       await api.put(`/admin/orders/${orderId}/accept`);
-      showNotification("Order accepted successfully", "success");
-      fetchOrders();
+
+      showNotification(
+        "Order accepted",
+        "success",
+        "Order status updated successfully"
+      );
+
+      fetchOrders(true);
+      window.dispatchEvent(new Event("ordersChanged"));
     } catch (error) {
-      showNotification(error.response?.data?.message || "Failed to update order", "error");
+      showNotification(
+        "Error",
+        "error",
+        error.response?.data?.message || "Failed to accept order"
+      );
     }
   };
 
   const updateOrderStatus = async (orderId, status) => {
     try {
-      setMessage("");
       await api.put(`/admin/orders/${orderId}/status`, {
         status,
         note: `Order marked as ${status} by sub admin`,
       });
-      showNotification(`Order marked as ${status}`, "success");
-      fetchOrders();
+
+      showNotification("Order updated", "success", `Marked as ${status}`);
+
+      fetchOrders(true);
+      window.dispatchEvent(new Event("ordersChanged"));
     } catch (error) {
       showNotification(
-      error.response?.data?.message || "Failed to update order",
-      "error"
-    );
+        "Error",
+        "error",
+        error.response?.data?.message || "Failed to update order"
+      );
     }
   };
 
@@ -74,55 +114,26 @@ const { showNotification } = useNotification();
             <p>Accept orders and update delivery status.</p>
           </div>
 
-          <MotionButton className="admin-refresh-btn" onClick={fetchOrders}>
+          <MotionButton
+            className="admin-refresh-btn"
+            onClick={() => fetchOrders(false)}
+          >
             Refresh
           </MotionButton>
         </div>
 
-        {message && <p className="form-message">{message}</p>}
-
         <div className="subadmin-filters">
-          <button
-            className={statusFilter === "" ? "active-filter" : ""}
-            onClick={() => setStatusFilter("")}
-          >
-            All
-          </button>
-
-          <button
-            className={statusFilter === "Pending" ? "active-filter" : ""}
-            onClick={() => setStatusFilter("Pending")}
-          >
-            Pending
-          </button>
-
-          <button
-            className={statusFilter === "Accepted" ? "active-filter" : ""}
-            onClick={() => setStatusFilter("Accepted")}
-          >
-            Accepted
-          </button>
-
-          <button
-            className={statusFilter === "Preparing" ? "active-filter" : ""}
-            onClick={() => setStatusFilter("Preparing")}
-          >
-            Preparing
-          </button>
-
-          <button
-            className={statusFilter === "Ready" ? "active-filter" : ""}
-            onClick={() => setStatusFilter("Ready")}
-          >
-            Ready
-          </button>
-
-          <button
-            className={statusFilter === "Delivered" ? "active-filter" : ""}
-            onClick={() => setStatusFilter("Delivered")}
-          >
-            Delivered
-          </button>
+          {["", "Pending", "Accepted", "Preparing", "Ready", "Delivered"].map(
+            (status) => (
+              <button
+                key={status || "All"}
+                className={statusFilter === status ? "active-filter" : ""}
+                onClick={() => setStatusFilter(status)}
+              >
+                {status || "All"}
+              </button>
+            )
+          )}
         </div>
 
         {loading ? (
@@ -139,9 +150,7 @@ const { showNotification } = useNotification();
                 <div className="subadmin-order-top">
                   <div>
                     <h2>Order #{order._id.slice(-6).toUpperCase()}</h2>
-                    <p>
-                      {new Date(order.createdAt).toLocaleString()}
-                    </p>
+                    <p>{new Date(order.createdAt).toLocaleString()}</p>
                   </div>
 
                   <span className={getStatusClass(order.orderStatus)}>

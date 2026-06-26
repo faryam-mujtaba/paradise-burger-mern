@@ -22,11 +22,16 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import AdminDealManagement from "./pages/AdminDealManagement";
 import SubAdminOrders from "./pages/SubAdminOrders";
+import ScrollToTop from "./components/ScrollToTop";
+import OrderStatusWatcher from "./components/OrderStatusWatcher";
 
 function App() {
   return (
+    
     <BrowserRouter>
+    <ScrollToTop />
       <Navbar />
+      <OrderStatusWatcher />
 
       <main className="page-container">
         <Routes>

@@ -157,6 +157,11 @@ const orderSchema = new mongoose.Schema(
       default: "Pending",
     },
 
+    hiddenForCustomer: {
+      type: Boolean,
+      default: false,
+    },
+
     statusHistory: [statusHistorySchema],
 
     acceptedAt: Date,

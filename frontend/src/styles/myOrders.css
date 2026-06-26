@@ -1,0 +1,48 @@
+.my-orders-page {
+  width: 100%;
+}
+
+.empty-my-orders {
+  margin-top: 24px;
+  padding: 28px;
+  border-radius: 20px;
+  background: #fff8ec;
+  border: 2px dashed #ffb300;
+  text-align: center;
+}
+
+.empty-my-orders h2 {
+  color: #d62828;
+  margin-bottom: 8px;
+}
+
+.empty-my-orders p {
+  color: #374151;
+  font-weight: 700;
+}
+
+.customer-order-actions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.remove-order-btn {
+  padding: 12px 18px;
+  border: none;
+  border-radius: 14px;
+  background: #fff1f2;
+  color: #d62828;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: 0.25s ease;
+  box-shadow: 0 8px 20px rgba(214, 40, 40, 0.12);
+}
+
+.remove-order-btn:hover {
+  background: #d62828;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(214, 40, 40, 0.25);
+}
