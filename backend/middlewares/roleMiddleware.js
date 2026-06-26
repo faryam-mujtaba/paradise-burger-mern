@@ -1,9 +1,9 @@
-const authorizeRoles = (...allowedRoles) => {
+const authorizeRoles = (...roles) => {
   return (req, res, next) => {
-    if (!req.user || !allowedRoles.includes(req.user.role)) {
+    if (!req.user || !roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
-        message: "Access denied. You do not have permission to access this route.",
+        message: "Access denied. You are not allowed to access this route.",
       });
     }
 

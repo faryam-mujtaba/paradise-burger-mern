@@ -49,6 +49,13 @@ function Navbar() {
   const navClass = ({ isActive }) =>
     isActive ? "nav-icon-link active-nav-link" : "nav-icon-link";
 
+  const displayName =
+    user?.role === "admin"
+      ? "Admin"
+      : user?.role === "subadmin"
+        ? "Sub Admin"
+        : user?.fullName || user?.name || user?.phone;
+
   return (
     <motion.nav
       className="navbar"
@@ -87,10 +94,9 @@ function Navbar() {
             <motion.div {...navMotion}>
               <NavLink
                 className={({ isActive }) =>
-                  `${
-                    isActive
-                      ? "nav-icon-link active-nav-link"
-                      : "nav-icon-link"
+                  `${isActive
+                    ? "nav-icon-link active-nav-link"
+                    : "nav-icon-link"
                   } cart-nav-link`
                 }
                 to="/cart"
@@ -145,6 +151,15 @@ function Navbar() {
           </>
         )}
 
+        {user?.role === "subadmin" && (
+          <motion.div {...navMotion}>
+            <NavLink className={navClass} to="/subadmin/orders">
+              <FaClipboardList />
+              <span>Orders Panel</span>
+            </NavLink>
+          </motion.div>
+        )}
+
         {user && (
           <motion.div {...navMotion}>
             <NavLink className={navClass} to="/change-password">
@@ -175,21 +190,18 @@ function Navbar() {
         {user && (
           <>
             <motion.div
-              className={`nav-user ${
-                user.role === "admin"
+              className={`nav-user ${user.role === "admin"
                   ? "admin-user-badge"
-                  : "customer-user-badge"
-              }`}
+                  : user.role === "subadmin"
+                    ? "subadmin-user-badge"
+                    : "customer-user-badge"
+                }`}
               whileHover={{ scale: 1.03 }}
               transition={{ type: "spring", stiffness: 260 }}
-              title={user.fullName || user.name || user.phone}
+              title={displayName}
             >
               <FaUserCircle />
-              <span>
-                {user.role === "admin"
-                  ? "Admin"
-                  : user.fullName || user.name || user.phone}
-              </span>
+              <span>{displayName}</span>
             </motion.div>
 
             <motion.button

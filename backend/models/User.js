@@ -52,10 +52,10 @@ const userSchema = new mongoose.Schema(
       minlength: 6,
     },
     role: {
-      type: String,
-      enum: ["customer", "admin"],
-      default: "customer",
-    },
+  type: String,
+  enum: ["customer", "admin", "subadmin"],
+  default: "customer",
+},
     isPhoneVerified: {
       type: Boolean,
       default: false,

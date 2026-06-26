@@ -21,6 +21,8 @@ import ResendVerification from "./pages/ResendVerification";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import AdminDealManagement from "./pages/AdminDealManagement";
+import SubAdminOrders from "./pages/SubAdminOrders";
+
 function App() {
   return (
     <BrowserRouter>
@@ -111,11 +113,19 @@ function App() {
           <Route
             path="/change-password"
             element={
-              <ProtectedRoute allowedRoles={["customer", "admin"]}>
+              <ProtectedRoute allowedRoles={["customer", "admin", "subadmin"]}>
                 <ChangePassword />
               </ProtectedRoute>
             }
           />
+          <Route
+  path="/subadmin/orders"
+  element={
+    <ProtectedRoute allowedRoles={["subadmin"]}>
+      <SubAdminOrders />
+    </ProtectedRoute>
+  }
+/>
         </Routes>
       </main>
     </BrowserRouter>

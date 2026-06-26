@@ -13,6 +13,10 @@ function ProtectedRoute({ children, allowedRoles }) {
       return <Navigate to="/admin/dashboard" replace />;
     }
 
+    if (user.role === "subadmin") {
+      return <Navigate to="/subadmin/orders" replace />;
+    }
+
     return <Navigate to="/menu" replace />;
   }
 

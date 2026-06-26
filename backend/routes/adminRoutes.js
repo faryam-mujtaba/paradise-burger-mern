@@ -22,10 +22,10 @@ router.get("/dashboard", protect, authorizeRoles("admin"), (req, res) => {
   });
 });
 
-router.get("/orders", protect, authorizeRoles("admin"), getAllOrders);
-router.get("/orders/:id", protect, authorizeRoles("admin"), getAdminOrderById);
-router.put("/orders/:id/accept", protect, authorizeRoles("admin"), acceptOrder);
-router.put("/orders/:id/reject", protect, authorizeRoles("admin"), rejectOrder);
-router.put("/orders/:id/status", protect, authorizeRoles("admin"), updateOrderStatus);
+router.get("/orders", protect, authorizeRoles("admin","subadmin"), getAllOrders);
+router.get("/orders/:id", protect, authorizeRoles("admin", "subadmin"), getAdminOrderById);
+router.put("/orders/:id/accept", protect, authorizeRoles("admin", "subadmin"), acceptOrder);
+router.put("/orders/:id/reject", protect,authorizeRoles("admin", "subadmin"), rejectOrder);
+router.put("/orders/:id/status", protect, authorizeRoles("admin", "subadmin"), updateOrderStatus);
 
 module.exports = router;
