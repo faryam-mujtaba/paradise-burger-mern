@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import api from "../services/api";
 import PageTransition from "../components/animations/PageTransition";
 import MotionButton from "../components/animations/MotionButton";
-
+import { useNotification } from "../context/NotificationContext";
 function SubAdminOrders() {
   const [orders, setOrders] = useState([]);
   const [statusFilter, setStatusFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
-
+const { showNotification } = useNotification();
   const fetchOrders = async () => {
     try {
       setLoading(true);
@@ -36,10 +36,10 @@ function SubAdminOrders() {
     try {
       setMessage("");
       await api.put(`/admin/orders/${orderId}/accept`);
-      setMessage("Order accepted successfully");
+      showNotification("Order accepted successfully", "success");
       fetchOrders();
     } catch (error) {
-      setMessage(error.response?.data?.message || "Failed to accept order");
+      showNotification(error.response?.data?.message || "Failed to update order", "error");
     }
   };
 
@@ -50,10 +50,13 @@ function SubAdminOrders() {
         status,
         note: `Order marked as ${status} by sub admin`,
       });
-      setMessage(`Order marked as ${status}`);
+      showNotification(`Order marked as ${status}`, "success");
       fetchOrders();
     } catch (error) {
-      setMessage(error.response?.data?.message || "Failed to update order");
+      showNotification(
+      error.response?.data?.message || "Failed to update order",
+      "error"
+    );
     }
   };
 

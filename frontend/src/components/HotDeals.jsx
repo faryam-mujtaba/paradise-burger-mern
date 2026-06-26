@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import api from "../services/api";
 import { useCart } from "../context/CartContext";
 import "../styles/deals.css";
-
+import { useNotification } from "../context/NotificationContext";
 const backendHost =
   window.location.hostname === "localhost" ||
   window.location.hostname === "127.0.0.1"
@@ -17,8 +17,8 @@ function HotDeals() {
   const [deals, setDeals] = useState([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [cartMessage, setCartMessage] = useState("");
-
+ 
+const { showNotification } = useNotification();
   const getImageUrl = (image) => {
     if (!image) return "";
     if (image.startsWith("http")) return image;
@@ -59,7 +59,7 @@ function HotDeals() {
       itemType: "deal",
     });
 
-    setCartMessage(`${deal.title} added to cart`);
+    showNotification(`${deal.title} added to cart`, "success");
 
     setTimeout(() => {
       setCartMessage("");
@@ -77,7 +77,7 @@ function HotDeals() {
         <h2>Hot Deals</h2>
       </div>
 
-      {cartMessage && <div className="hot-cart-message">{cartMessage}</div>}
+      
 
       <div className="hot-slider-window">
         <div
