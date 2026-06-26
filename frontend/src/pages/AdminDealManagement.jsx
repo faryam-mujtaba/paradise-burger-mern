@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import api from "../services/api";
+import ConfirmModal from "../components/ConfirmModal";
 import "../styles/deals.css";
 
 const backendHost =
@@ -31,6 +32,8 @@ function AdminDealManagement() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
   const getImageUrl = (image) => {
     if (!image) return "";
@@ -171,17 +174,20 @@ function AdminDealManagement() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleDelete = async (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this deal?"
-    );
+  const openDeleteModal = (id) => {
+    setPendingDeleteId(id);
+    setIsDeleteModalOpen(true);
+  };
 
-    if (!confirmDelete) return;
+  const confirmDelete = async () => {
+    if (!pendingDeleteId) return;
 
     try {
       setMessage("");
-      await api.delete(`/deals/${id}`);
+      await api.delete(`/deals/${pendingDeleteId}`);
       setMessage("Deal deleted successfully");
+      setIsDeleteModalOpen(false);
+      setPendingDeleteId(null);
       fetchDeals();
     } catch (error) {
       console.error("DELETE DEAL ERROR:", error);
@@ -342,13 +348,26 @@ function AdminDealManagement() {
 
                 <div className="deal-card-actions">
                   <button onClick={() => handleEdit(deal)}>Edit</button>
-                  <button onClick={() => handleDelete(deal._id)}>Delete</button>
+                  <button onClick={() => openDeleteModal(deal._id)}>Delete</button>
                 </div>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title="Delete deal?"
+        message="This will remove the hot deal from the site. Customers will no longer see it."
+        confirmText="Delete Deal"
+        cancelText="Cancel"
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setIsDeleteModalOpen(false);
+          setPendingDeleteId(null);
+        }}
+      />
     </div>
   );
 }

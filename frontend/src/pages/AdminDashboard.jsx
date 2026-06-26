@@ -6,6 +6,8 @@ import { useNotification } from "../context/NotificationContext";
 import PromptModal from "../components/PromptModal";
 import PageTransition from "../components/animations/PageTransition";
 import "../styles/admin.css";
+import AdminShopControl from "../components/AdminShopControl";
+import AdminReportsPanel from "../components/AdminReportsPanel";
 function AdminDashboard() {
   const { user, token } = useAuth();
   const { showNotification } = useNotification();
@@ -18,6 +20,8 @@ function AdminDashboard() {
 
   const [showAllOrders, setShowAllOrders] = useState(false);
   const [orderSearch, setOrderSearch] = useState("");
+  const [activeSummary, setActiveSummary] = useState(null);
+  const [summaryMonth, setSummaryMonth] = useState("all");
 
   const fetchOrders = async (silent = false) => {
     try {
@@ -77,17 +81,334 @@ function AdminDashboard() {
       const fullId = order._id?.toLowerCase() || "";
       const shortId = order._id?.slice(-6).toLowerCase() || "";
 
-      return fullId.includes(normalizedSearch) || shortId.includes(normalizedSearch);
+      return (
+        fullId.includes(normalizedSearch) ||
+        shortId.includes(normalizedSearch)
+      );
     });
   }, [normalizedSearch, sortedOrders]);
 
-  const visibleOrders = normalizedSearch
-    ? searchedOrders
-    : showAllOrders
-      ? sortedOrders
-      : sortedOrders.slice(0, 8);
+ const visibleOrders = normalizedSearch
+  ? searchedOrders
+  : showAllOrders
+    ? sortedOrders
+    : sortedOrders.slice(0, 8);
 
-  const previousOrdersCount = Math.max(sortedOrders.length - 8, 0);
+const isSearching = Boolean(normalizedSearch);
+
+const previousOrdersCount = Math.max(sortedOrders.length - 8, 0);
+
+  const getOrderShortId = (order) =>
+    order._id?.slice(-6).toUpperCase() || "N/A";
+
+  const statusCounts = useMemo(() => {
+    const counts = {
+      Pending: 0,
+      Accepted: 0,
+      Preparing: 0,
+      Ready: 0,
+      Delivered: 0,
+      Rejected: 0,
+      Cancelled: 0,
+    };
+
+    orders.forEach((order) => {
+      const status = order.orderStatus || "Unknown";
+      counts[status] = (counts[status] || 0) + 1;
+    });
+
+    return counts;
+  }, [orders]);
+
+  const pendingOrders = useMemo(() => {
+    return sortedOrders.filter((order) => order.orderStatus === "Pending");
+  }, [sortedOrders]);
+
+  const deliveredOrders = useMemo(() => {
+    return sortedOrders.filter((order) => order.orderStatus === "Delivered");
+  }, [sortedOrders]);
+
+  const allDeliveredRevenue = useMemo(() => {
+    return deliveredOrders.reduce(
+      (total, order) => total + Number(order.totalAmount || 0),
+      0
+    );
+  }, [deliveredOrders]);
+
+  const monthOptions = useMemo(() => {
+    const months = new Map();
+
+    deliveredOrders.forEach((order) => {
+      const date = new Date(order.createdAt);
+      if (Number.isNaN(date.getTime())) return;
+
+      const key = `${date.getFullYear()}-${String(
+        date.getMonth() + 1
+      ).padStart(2, "0")}`;
+
+      const label = date.toLocaleString("default", {
+        month: "long",
+        year: "numeric",
+      });
+
+      months.set(key, label);
+    });
+
+    const sortedMonths = Array.from(months, ([value, label]) => ({
+      value,
+      label,
+    })).sort((a, b) => b.value.localeCompare(a.value));
+
+    return [{ value: "all", label: "All time" }, ...sortedMonths];
+  }, [deliveredOrders]);
+
+  const filteredSalesOrders = useMemo(() => {
+    if (summaryMonth === "all") return deliveredOrders;
+
+    return deliveredOrders.filter((order) => {
+      const date = new Date(order.createdAt);
+      if (Number.isNaN(date.getTime())) return false;
+
+      const key = `${date.getFullYear()}-${String(
+        date.getMonth() + 1
+      ).padStart(2, "0")}`;
+
+      return key === summaryMonth;
+    });
+  }, [deliveredOrders, summaryMonth]);
+
+  const salesSummary = useMemo(() => {
+    const dealMap = new Map();
+    const menuMap = new Map();
+
+    let totalOrderRevenue = 0;
+
+    filteredSalesOrders.forEach((order) => {
+      totalOrderRevenue += Number(order.totalAmount || 0);
+
+      (order.items || []).forEach((item) => {
+        const name = item.name || "Unknown Item";
+        const quantity = Number(item.quantity || 0);
+        const revenue = Number(item.price || 0) * quantity;
+
+        const targetMap = item.itemType === "deal" ? dealMap : menuMap;
+
+        if (!targetMap.has(name)) {
+          targetMap.set(name, {
+            name,
+            quantity: 0,
+            revenue: 0,
+          });
+        }
+
+        const existing = targetMap.get(name);
+        existing.quantity += quantity;
+        existing.revenue += revenue;
+      });
+    });
+
+    const sortByRevenue = (map) =>
+      Array.from(map.values()).sort((a, b) => b.revenue - a.revenue);
+
+    return {
+      totalOrderRevenue,
+      dealBreakdown: sortByRevenue(dealMap),
+      menuBreakdown: sortByRevenue(menuMap),
+    };
+  }, [filteredSalesOrders]);
+
+  const closeSummary = () => {
+    setActiveSummary(null);
+  };
+
+  const renderSmallOrderRow = (order) => (
+    <div className="admin-summary-order-row" key={order._id}>
+      <div>
+        <strong>Order #{getOrderShortId(order)}</strong>
+        <span>
+          {order.customerSnapshot?.fullName ||
+            order.customer?.fullName ||
+            "Customer"}
+        </span>
+      </div>
+
+      <div>
+        <b>Rs. {order.totalAmount}</b>
+        <small>{order.orderStatus}</small>
+      </div>
+    </div>
+  );
+
+  const renderSummaryContent = () => {
+    if (activeSummary === "total") {
+      return (
+        <>
+          <div className="admin-summary-grid">
+            <div>
+              <strong>{orders.length}</strong>
+              <span>Total Orders</span>
+            </div>
+
+            <div>
+              <strong>{statusCounts.Pending}</strong>
+              <span>Pending</span>
+            </div>
+
+            <div>
+              <strong>
+                {statusCounts.Accepted +
+                  statusCounts.Preparing +
+                  statusCounts.Ready}
+              </strong>
+              <span>In Progress</span>
+            </div>
+
+            <div>
+              <strong>{statusCounts.Delivered}</strong>
+              <span>Delivered</span>
+            </div>
+
+            <div>
+              <strong>{statusCounts.Rejected + statusCounts.Cancelled}</strong>
+              <span>Rejected / Cancelled</span>
+            </div>
+
+            <div>
+              <strong>Rs. {allDeliveredRevenue}</strong>
+              <span>Delivered Revenue</span>
+            </div>
+          </div>
+
+          <h3>Latest Orders</h3>
+          {sortedOrders.slice(0, 6).map(renderSmallOrderRow)}
+        </>
+      );
+    }
+
+    if (activeSummary === "pending") {
+      return (
+        <>
+          <div className="admin-summary-grid">
+            <div>
+              <strong>{pendingOrders.length}</strong>
+              <span>Pending Orders</span>
+            </div>
+          </div>
+
+          {pendingOrders.length === 0 ? (
+            <p className="admin-summary-empty">No pending orders right now.</p>
+          ) : (
+            pendingOrders.map(renderSmallOrderRow)
+          )}
+        </>
+      );
+    }
+
+    if (activeSummary === "delivered") {
+      return (
+        <>
+          <div className="admin-summary-grid">
+            <div>
+              <strong>{deliveredOrders.length}</strong>
+              <span>Delivered Orders</span>
+            </div>
+
+            <div>
+              <strong>Rs. {allDeliveredRevenue}</strong>
+              <span>Total Delivered Sales</span>
+            </div>
+          </div>
+
+          <h3>Recent Delivered Orders</h3>
+          {deliveredOrders.slice(0, 10).map(renderSmallOrderRow)}
+        </>
+      );
+    }
+
+    if (activeSummary === "sales") {
+      return (
+        <>
+          <div className="admin-summary-filter">
+            <label>Sales Period</label>
+
+            <select
+              value={summaryMonth}
+              onChange={(e) => setSummaryMonth(e.target.value)}
+            >
+              {monthOptions.map((month) => (
+                <option key={month.value} value={month.value}>
+                  {month.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="admin-summary-grid">
+            <div>
+              <strong>{filteredSalesOrders.length}</strong>
+              <span>Delivered Orders</span>
+            </div>
+
+            <div>
+              <strong>Rs. {salesSummary.totalOrderRevenue}</strong>
+              <span>Total Sales</span>
+            </div>
+          </div>
+
+          <p className="admin-summary-note">
+            Sales are calculated from delivered order totals, so customer
+            selected items, deals, and saved order prices are included.
+          </p>
+
+          <h3>Deal Sales</h3>
+
+          {salesSummary.dealBreakdown.length === 0 ? (
+            <p className="admin-summary-empty">
+              No deal sales in this period.
+            </p>
+          ) : (
+            salesSummary.dealBreakdown.map((item) => (
+              <div className="admin-summary-order-row" key={item.name}>
+                <div>
+                  <strong>{item.name}</strong>
+                  <span>Quantity sold: {item.quantity}</span>
+                </div>
+
+                <div>
+                  <b>Rs. {item.revenue}</b>
+                  <small>Deal revenue</small>
+                </div>
+              </div>
+            ))
+          )}
+
+          <h3>Menu / Custom Item Sales</h3>
+
+          {salesSummary.menuBreakdown.length === 0 ? (
+            <p className="admin-summary-empty">
+              No menu item sales in this period.
+            </p>
+          ) : (
+            salesSummary.menuBreakdown.map((item) => (
+              <div className="admin-summary-order-row" key={item.name}>
+                <div>
+                  <strong>{item.name}</strong>
+                  <span>Quantity sold: {item.quantity}</span>
+                </div>
+
+                <div>
+                  <b>Rs. {item.revenue}</b>
+                  <small>Item revenue</small>
+                </div>
+              </div>
+            ))
+          )}
+        </>
+      );
+    }
+
+    return null;
+  };
 
   const acceptOrder = async (orderId) => {
     try {
@@ -200,6 +521,7 @@ function AdminDashboard() {
   return (
     <PageTransition>
       <div>
+
         <div className="admin-header">
           <div>
             <h1>Admin Orders Dashboard</h1>
@@ -221,63 +543,82 @@ function AdminDashboard() {
 
             <div className="admin-order-search-box">
               <span>🔎</span>
-              <input
-                type="text"
-                value={orderSearch}
-                onChange={(e) => setOrderSearch(e.target.value)}
-                placeholder="Search order ID"
-              />
+
+             <input
+  type="text"
+  value={orderSearch}
+  onChange={(e) => {
+    
+    setOrderSearch(e.target.value);
+    setShowAllOrders(false);
+  }}
+  placeholder="Search order ID"
+/>
 
               {orderSearch && (
-                <button
-                  type="button"
-                  onClick={() => setOrderSearch("")}
-                  aria-label="Clear search"
-                >
-                  ×
-                </button>
+               <button
+  type="button"
+  onClick={() => {
+    setOrderSearch("");
+    setShowAllOrders(false);
+  }}
+  aria-label="Clear search"
+>
+  ×
+</button>
               )}
             </div>
           </div>
         </div>
+       {!isSearching && (
+  <>
+    <AdminShopControl token={token} />
 
-        <div className="admin-stats">
-          <div>
-            <strong>Total Orders</strong>
-            <span>{orders.length}</span>
-          </div>
+    <AdminReportsPanel token={token} />
 
-          <div>
-            <strong>Pending</strong>
-            <span>
-              {orders.filter((order) => order.orderStatus === "Pending").length}
-            </span>
-          </div>
+    <div className="admin-stats">
+      <button
+        type="button"
+        className="admin-stat-card"
+        onClick={() => setActiveSummary("total")}
+      >
+        <strong>Total Orders</strong>
+        <span>{orders.length}</span>
+        <small>Click for summary</small>
+      </button>
 
-          <div>
-            <strong>Delivered</strong>
-            <span>
-              {
-                orders.filter((order) => order.orderStatus === "Delivered")
-                  .length
-              }
-            </span>
-          </div>
+      <button
+        type="button"
+        className="admin-stat-card"
+        onClick={() => setActiveSummary("pending")}
+      >
+        <strong>Pending</strong>
+        <span>{statusCounts.Pending}</span>
+        <small>View pending orders</small>
+      </button>
 
-          <div>
-            <strong>Total Sales</strong>
-            <span>
-              Rs.{" "}
-              {orders
-                .filter((order) => order.orderStatus === "Delivered")
-                .reduce(
-                  (total, order) => total + Number(order.totalAmount || 0),
-                  0
-                )}
-            </span>
-          </div>
-        </div>
+      <button
+        type="button"
+        className="admin-stat-card"
+        onClick={() => setActiveSummary("delivered")}
+      >
+        <strong>Delivered</strong>
+        <span>{statusCounts.Delivered}</span>
+        <small>View delivered orders</small>
+      </button>
 
+      <button
+        type="button"
+        className="admin-stat-card"
+        onClick={() => setActiveSummary("sales")}
+      >
+        <strong>Total Sales</strong>
+        <span>Rs. {allDeliveredRevenue}</span>
+        <small>View sales report</small>
+      </button>
+    </div>
+  </>
+)}
         <div className="admin-orders-toolbar">
           <div>
             <h2>
@@ -488,6 +829,37 @@ function AdminDashboard() {
               </div>
             )}
           </>
+        )}
+
+        {activeSummary && (
+          <div className="admin-summary-overlay" onClick={closeSummary}>
+            <div
+              className="admin-summary-modal"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="admin-summary-header">
+                <div>
+                  <span>📊 Admin Report</span>
+
+                  <h2>
+                    {activeSummary === "total" && "Total Orders Summary"}
+                    {activeSummary === "pending" && "Pending Orders Summary"}
+                    {activeSummary === "delivered" &&
+                      "Delivered Orders Summary"}
+                    {activeSummary === "sales" && "Total Sales Report"}
+                  </h2>
+                </div>
+
+                <button type="button" onClick={closeSummary}>
+                  ×
+                </button>
+              </div>
+
+              <div className="admin-summary-body">
+                {renderSummaryContent()}
+              </div>
+            </div>
+          </div>
         )}
       </div>
 

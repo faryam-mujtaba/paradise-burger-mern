@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
+import ConfirmModal from "../components/ConfirmModal";
 
 function AdminCategoryManagement() {
   const [categories, setCategories] = useState([]);
@@ -10,6 +11,8 @@ function AdminCategoryManagement() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
   const fetchCategories = async () => {
     try {
@@ -93,19 +96,22 @@ function AdminCategoryManagement() {
     setMessage("");
   };
 
-  const handleDelete = async (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this category?"
-    );
+  const openDeleteModal = (id) => {
+    setPendingDeleteId(id);
+    setIsDeleteModalOpen(true);
+  };
 
-    if (!confirmDelete) return;
+  const confirmDelete = async () => {
+    if (!pendingDeleteId) return;
 
     try {
       setMessage("");
 
-      await api.delete(`/categories/${id}`);
+      await api.delete(`/categories/${pendingDeleteId}`);
 
       setMessage("Category deleted successfully");
+      setIsDeleteModalOpen(false);
+      setPendingDeleteId(null);
       fetchCategories();
     } catch (error) {
       console.error("DELETE CATEGORY ERROR:", error);
@@ -172,7 +178,7 @@ function AdminCategoryManagement() {
                       Edit
                     </button>
 
-                    <button onClick={() => handleDelete(category._id)}>
+                    <button onClick={() => openDeleteModal(category._id)}>
                       Delete
                     </button>
                   </td>
@@ -182,6 +188,19 @@ function AdminCategoryManagement() {
           </table>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title="Delete category?"
+        message="This action cannot be undone. The category will be removed permanently."
+        confirmText="Delete Category"
+        cancelText="Cancel"
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setIsDeleteModalOpen(false);
+          setPendingDeleteId(null);
+        }}
+      />
     </div>
   );
 }

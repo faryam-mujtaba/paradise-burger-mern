@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
+import { useNotification } from "../context/NotificationContext";
 import PageTransition from "../components/animations/PageTransition";
 
 const LIMITS = {
@@ -16,6 +17,7 @@ function Checkout() {
   const navigate = useNavigate();
   const { user, token } = useAuth();
   const { cartItems, subtotal, totalAmount, clearCart } = useCart();
+  const { showNotification } = useNotification();
 
   const [formData, setFormData] = useState({
     addressLine: "",
@@ -26,6 +28,61 @@ function Checkout() {
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [shopStatus, setShopStatus] = useState(null);
+  const [shopStatusLoading, setShopStatusLoading] = useState(true);
+
+  const fetchShopStatus = async (showLoader = true) => {
+    try {
+      if (showLoader) {
+        setShopStatusLoading(true);
+      }
+
+      const response = await api.get("/shop/status");
+      const data = response.data.data;
+
+      setShopStatus(data);
+      return data;
+    } catch (error) {
+      console.error("CHECKOUT SHOP STATUS ERROR:", error);
+      setShopStatus(null);
+      return null;
+    } finally {
+      if (showLoader) {
+        setShopStatusLoading(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    fetchShopStatus();
+
+    const interval = setInterval(() => {
+      fetchShopStatus(false);
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const getShopCheckoutMessage = (status) => {
+    if (!status) {
+      return "Unable to check shop status. Please refresh the page.";
+    }
+
+    if (status.isOpen) {
+      return "Shop is open now. You can place your order.";
+    }
+
+    if (status.closedReason) {
+      return `Shop is closed right now. Reason: ${status.closedReason}`;
+    }
+
+    return "Shop is closed right now. Orders are not available.";
+  };
+
+  const isShopOpen = shopStatus?.isOpen === true;
+  const checkoutShopMessage = shopStatusLoading
+    ? "Checking shop status..."
+    : getShopCheckoutMessage(shopStatus);
 
   if (!user) {
     return (
@@ -121,8 +178,23 @@ function Checkout() {
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
 
+    const latestShopStatus = await fetchShopStatus(false);
+
+    if (!latestShopStatus?.isOpen) {
+      const closedMessage = getShopCheckoutMessage(latestShopStatus);
+
+      setMessage(closedMessage);
+
+      showNotification("Shop is closed", "error", closedMessage);
+      return;
+    }
+
     if (user?.role === "customer" && !user?.isEmailVerified) {
-      alert("Please verify your email before placing an order.");
+      showNotification(
+        "Email verification required",
+        "error",
+        "Please verify your email before placing an order."
+      );
       return;
     }
 
@@ -185,6 +257,15 @@ function Checkout() {
           <form className="checkout-form" onSubmit={handlePlaceOrder}>
             <h2>Delivery Details</h2>
 
+            <div
+              className={`checkout-shop-status ${
+                isShopOpen ? "checkout-shop-open" : "checkout-shop-closed"
+              }`}
+            >
+              <strong>{isShopOpen ? "Shop is Open" : "Shop is Closed"}</strong>
+              <span>{checkoutShopMessage}</span>
+            </div>
+
             {message && <p className="form-message">{message}</p>}
 
             <label>Address</label>
@@ -235,11 +316,21 @@ function Checkout() {
               maxLength={LIMITS.specialInstructions}
             />
             <small className="char-limit">
-              {formData.specialInstructions.length}/{LIMITS.specialInstructions} characters
+              {formData.specialInstructions.length}/
+              {LIMITS.specialInstructions} characters
             </small>
 
-            <button type="submit" disabled={loading}>
-              {loading ? "Placing Order..." : "Place Order"}
+            <button
+              type="submit"
+              disabled={loading || shopStatusLoading || !isShopOpen}
+            >
+              {loading
+                ? "Placing Order..."
+                : shopStatusLoading
+                  ? "Checking Shop..."
+                  : !isShopOpen
+                    ? "Shop Closed"
+                    : "Place Order"}
             </button>
           </form>
 
@@ -247,7 +338,10 @@ function Checkout() {
             <h2>Order Summary</h2>
 
             {cartItems.map((item) => (
-              <div className="checkout-summary-item" key={item.cartId || item._id}>
+              <div
+                className="checkout-summary-item"
+                key={item.cartId || item._id}
+              >
                 <span>
                   {item.name} x {item.quantity}
                   {item.itemType === "deal" && (

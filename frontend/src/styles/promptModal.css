@@ -1,0 +1,114 @@
+.prompt-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(15, 10, 10, 0.58);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.prompt-modal-box {
+  width: 100%;
+  max-width: 480px;
+  background: #fff8ec;
+  border: 2px solid #ffb300;
+  border-radius: 26px;
+  padding: 28px 24px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+  animation: promptPop 0.25s ease;
+}
+
+.prompt-modal-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  background: #ffb300;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 900;
+}
+
+.prompt-modal-box h2 {
+  margin: 0 0 8px;
+  color: #d62828;
+  font-size: 24px;
+  text-align: center;
+}
+
+.prompt-modal-box p {
+  margin: 0 0 14px;
+  color: #374151;
+  font-size: 15px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.prompt-modal-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.prompt-modal-input {
+  width: 100%;
+  min-height: 100px;
+  border: 1px solid #f1d6b8;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 15px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.prompt-modal-input:focus {
+  outline: none;
+  border-color: #d62828;
+  box-shadow: 0 0 0 3px rgba(214, 40, 40, 0.12);
+}
+
+.prompt-modal-actions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.prompt-cancel-btn,
+.prompt-main-btn {
+  border: none;
+  border-radius: 14px;
+  padding: 12px 18px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.prompt-cancel-btn {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.prompt-main-btn {
+  background: #d62828;
+  color: #fff;
+}
+
+@keyframes promptPop {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

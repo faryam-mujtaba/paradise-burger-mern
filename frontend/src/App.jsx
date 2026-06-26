@@ -24,7 +24,7 @@ import AdminDealManagement from "./pages/AdminDealManagement";
 import SubAdminOrders from "./pages/SubAdminOrders";
 import ScrollToTop from "./components/ScrollToTop";
 import OrderStatusWatcher from "./components/OrderStatusWatcher";
-
+import ShopStatusBanner from "./components/ShopStatusBanner";
 function App() {
   return (
     
@@ -32,7 +32,7 @@ function App() {
     <ScrollToTop />
       <Navbar />
       <OrderStatusWatcher />
-
+      <ShopStatusBanner />
       <main className="page-container">
         <Routes>
           <Route path="/" element={<Home />} />

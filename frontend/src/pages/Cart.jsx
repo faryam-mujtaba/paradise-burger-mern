@@ -1,11 +1,15 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import api from "../services/api";
 import { useCart } from "../context/CartContext";
+import { useNotification } from "../context/NotificationContext";
 import PageTransition from "../components/animations/PageTransition";
 import MotionButton from "../components/animations/MotionButton";
-import { motion } from "framer-motion";
 
 function Cart() {
   const navigate = useNavigate();
+  const { showNotification } = useNotification();
 
   const {
     cartItems,
@@ -16,6 +20,67 @@ function Cart() {
     subtotal,
     totalAmount,
   } = useCart();
+
+  const [shopStatus, setShopStatus] = useState(null);
+  const [shopStatusLoading, setShopStatusLoading] = useState(true);
+
+  const fetchShopStatus = async () => {
+    try {
+      setShopStatusLoading(true);
+
+      const response = await api.get("/shop/status");
+      setShopStatus(response.data.data);
+    } catch (error) {
+      console.error("CART SHOP STATUS ERROR:", error);
+      setShopStatus(null);
+    } finally {
+      setShopStatusLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchShopStatus();
+
+    const interval = setInterval(fetchShopStatus, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const isShopOpen = shopStatus?.isOpen === true;
+
+  const getShopMessage = () => {
+    if (shopStatusLoading) {
+      return "Checking shop status...";
+    }
+
+    if (!shopStatus) {
+      return "Unable to check shop status. Please refresh the page.";
+    }
+
+    if (isShopOpen) {
+      return "Shop is open now. You can continue to checkout.";
+    }
+
+    if (shopStatus.closedReason) {
+      return `Shop is closed right now. Reason: ${shopStatus.closedReason}`;
+    }
+
+    return "Shop is closed right now. Orders are not available.";
+  };
+
+  const handleCheckout = () => {
+    if (shopStatusLoading) {
+      showNotification("Please wait", "info", "Checking shop status...");
+      return;
+    }
+
+    if (!isShopOpen) {
+      showNotification("Shop is closed", "error", getShopMessage());
+      return;
+    }
+
+    navigate("/checkout");
+  };
 
   if (cartItems.length === 0) {
     return (
@@ -32,6 +97,15 @@ function Cart() {
     <PageTransition>
       <div>
         <h1>Your Cart</h1>
+
+        <div
+          className={`cart-shop-status ${
+            isShopOpen ? "cart-shop-open" : "cart-shop-closed"
+          }`}
+        >
+          <strong>{isShopOpen ? "Shop is Open" : "Shop is Closed"}</strong>
+          <span>{getShopMessage()}</span>
+        </div>
 
         <div className="cart-list">
           {cartItems.map((item, index) => (
@@ -75,8 +149,6 @@ function Cart() {
             <strong>Subtotal:</strong> Rs. {subtotal}
           </p>
 
-          deliveryFee,
-
           <h2>Total: Rs. {totalAmount}</h2>
 
           <div className="cart-bottom-actions">
@@ -84,12 +156,18 @@ function Cart() {
               Clear Cart
             </MotionButton>
 
-            <MotionButton
-              className="checkout-btn"
-              onClick={() => navigate("/checkout")}
+            <button
+              type="button"
+              className="checkout-btn cart-checkout-button"
+              onClick={handleCheckout}
+              disabled={shopStatusLoading || !isShopOpen}
             >
-              Proceed to Checkout
-            </MotionButton>
+              {shopStatusLoading
+                ? "Checking Shop..."
+                : isShopOpen
+                  ? "Proceed to Checkout"
+                  : "Shop Closed"}
+            </button>
           </div>
         </div>
       </div>

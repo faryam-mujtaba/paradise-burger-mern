@@ -162,6 +162,30 @@ const orderSchema = new mongoose.Schema(
       default: false,
     },
 
+    /*
+      Business reporting fields:
+      These help dashboard reports count orders by shop shift.
+
+      Example:
+      Shop shift = 5 PM to 5 AM
+      Order at 2 AM on June 27 belongs to businessDate June 26.
+    */
+    businessDate: {
+      type: String,
+      default: "",
+      index: true,
+    },
+
+    businessShiftStart: {
+      type: Date,
+      default: null,
+    },
+
+    businessShiftEnd: {
+      type: Date,
+      default: null,
+    },
+
     statusHistory: [statusHistorySchema],
 
     acceptedAt: Date,
@@ -172,5 +196,9 @@ const orderSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+orderSchema.index({ createdAt: -1 });
+orderSchema.index({ orderStatus: 1 });
+orderSchema.index({ businessDate: 1, orderStatus: 1 });
 
 module.exports = mongoose.model("Order", orderSchema);

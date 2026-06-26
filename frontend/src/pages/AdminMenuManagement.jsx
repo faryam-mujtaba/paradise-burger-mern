@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import ConfirmModal from "../components/ConfirmModal";
 import PageTransition from "../components/animations/PageTransition";
 function AdminMenuManagement() {
   const { user, token } = useAuth();
@@ -11,6 +12,8 @@ function AdminMenuManagement() {
   const [editingId, setEditingId] = useState(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -134,21 +137,24 @@ function AdminMenuManagement() {
     });
   };
 
-  const deleteItem = async (itemId) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to remove this menu item?"
-    );
+  const openDeleteModal = (itemId) => {
+    setPendingDeleteId(itemId);
+    setIsDeleteModalOpen(true);
+  };
 
-    if (!confirmDelete) return;
+  const confirmDeleteItem = async () => {
+    if (!pendingDeleteId) return;
 
     try {
-      await api.delete(`/menu/${itemId}`, {
+      await api.delete(`/menu/${pendingDeleteId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
       setMessage("Menu item removed successfully.");
+      setIsDeleteModalOpen(false);
+      setPendingDeleteId(null);
       fetchData();
     } catch (error) {
       setMessage(error.response?.data?.message || "Failed to remove item.");
@@ -338,6 +344,19 @@ function AdminMenuManagement() {
           ))}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title="Remove menu item?"
+        message="This will delete the item from the menu. Customers will no longer see it."
+        confirmText="Remove Item"
+        cancelText="Cancel"
+        onConfirm={confirmDeleteItem}
+        onCancel={() => {
+          setIsDeleteModalOpen(false);
+          setPendingDeleteId(null);
+        }}
+      />
     </div>
     </PageTransition>
   );

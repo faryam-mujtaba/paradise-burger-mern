@@ -2,6 +2,10 @@ const Order = require("../models/Order");
 const MenuItem = require("../models/MenuItem");
 const Deal = require("../models/Deal");
 const User = require("../models/User");
+const {
+  getShopRuntimeStatus,
+  getBusinessShiftInfo,
+} = require("../utils/shopUtils");
 
 // Customer: Place order
 const createOrder = async (req, res) => {
@@ -86,6 +90,27 @@ const createOrder = async (req, res) => {
         message: "Please verify your email before placing an order",
       });
     }
+
+    const shopStatus = await getShopRuntimeStatus();
+
+    if (!shopStatus.isOpen) {
+      return res.status(403).json({
+        success: false,
+        message:
+          shopStatus.message ||
+          "Shop is currently closed. Orders are not allowed right now.",
+        data: {
+          isOpen: false,
+          mode: shopStatus.setting?.mode,
+          openingTime: shopStatus.setting?.openingTime,
+          closingTime: shopStatus.setting?.closingTime,
+          closedUntil: shopStatus.setting?.closedUntil,
+          closedReason: shopStatus.setting?.closedReason,
+        },
+      });
+    }
+
+    const businessShift = getBusinessShiftInfo(shopStatus.setting);
 
     let orderItems = [];
     let subtotal = 0;
@@ -181,6 +206,11 @@ const createOrder = async (req, res) => {
       paymentStatus: "Pending",
       orderStatus: "Pending",
       hiddenForCustomer: false,
+
+      businessDate: businessShift.businessDate,
+      businessShiftStart: businessShift.businessShiftStart,
+      businessShiftEnd: businessShift.businessShiftEnd,
+
       statusHistory: [
         {
           status: "Pending",
@@ -211,8 +241,6 @@ const getMyOrders = async (req, res) => {
   try {
     const orders = await Order.find({
       customer: req.user._id,
-
-      // This also shows old orders where hiddenForCustomer field does not exist
       hiddenForCustomer: { $ne: true },
     })
       .populate("items.menuItem", "name image")
