@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
+
 import api from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 function ShopStatusBanner() {
   const location = useLocation();
+  const { user } = useAuth();
+
   const [shopStatus, setShopStatus] = useState(null);
 
   const hideBanner =
+    user?.role === "admin" ||
+    user?.role === "subadmin" ||
     location.pathname.startsWith("/admin") ||
     location.pathname.startsWith("/subadmin");
 
@@ -20,15 +26,20 @@ function ShopStatusBanner() {
   };
 
   useEffect(() => {
+    if (hideBanner) {
+      return undefined;
+    }
+
     fetchShopStatus();
 
     const interval = setInterval(fetchShopStatus, 60000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [hideBanner]);
 
-  if (hideBanner) return null;
-  if (!shopStatus) return null;
+  if (hideBanner || !shopStatus) {
+    return null;
+  }
 
   const isOpen = shopStatus.isOpen === true;
 
@@ -41,16 +52,22 @@ function ShopStatusBanner() {
   return (
     <div
       className={`shop-status-banner ${
-        isOpen ? "shop-status-open" : "shop-status-closed"
+        isOpen
+          ? "shop-status-open"
+          : "shop-status-closed"
       }`}
     >
       <div>
-        <strong>{isOpen ? "Shop is Open" : "Shop is Closed"}</strong>
+        <strong>
+          {isOpen ? "Shop is Open" : "Shop is Closed"}
+        </strong>
+
         <span>{message}</span>
       </div>
 
       <small>
-        Timing: {shopStatus.openingTime} - {shopStatus.closingTime}
+        Timing: {shopStatus.openingTime} -{" "}
+        {shopStatus.closingTime}
       </small>
     </div>
   );

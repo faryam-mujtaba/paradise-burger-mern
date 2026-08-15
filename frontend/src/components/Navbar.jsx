@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import "../styles/navbar.css";
+
 import {
   FaHome,
   FaUtensils,
@@ -24,12 +25,37 @@ import {
 
 function Navbar() {
   const navigate = useNavigate();
+
   const { user, logout } = useAuth();
   const { cartItems } = useCart();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [profileUser, setProfileUser] = useState(user);
 
-  const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+  useEffect(() => {
+    setProfileUser(user);
+  }, [user]);
+
+  useEffect(() => {
+    const handleProfileUpdated = (event) => {
+      if (event.detail) {
+        setProfileUser(event.detail);
+      }
+    };
+
+    window.addEventListener("profileUpdated", handleProfileUpdated);
+
+    return () => {
+      window.removeEventListener("profileUpdated", handleProfileUpdated);
+    };
+  }, []);
+
+  const currentUser = profileUser || user;
+
+  const cartCount = cartItems.reduce(
+    (total, item) => total + item.quantity,
+    0
+  );
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
@@ -57,14 +83,22 @@ function Navbar() {
   };
 
   const navClass = ({ isActive }) =>
-    isActive ? "nav-icon-link active-nav-link" : "nav-icon-link";
+    isActive
+      ? "nav-icon-link active-nav-link"
+      : "nav-icon-link";
+
+  const firstName = currentUser?.fullName
+    ?.trim()
+    .split(" ")
+    .filter(Boolean)[0];
 
   const displayName =
-    user?.role === "admin"
+    firstName ||
+    (currentUser?.role === "admin"
       ? "Admin"
-      : user?.role === "subadmin"
+      : currentUser?.role === "subadmin"
         ? "Sub Admin"
-        : user?.fullName || user?.name || user?.phone;
+        : currentUser?.phone || "Profile");
 
   return (
     <>
@@ -99,7 +133,7 @@ function Navbar() {
             isMobileMenuOpen ? "show-mobile-overlay" : ""
           }`}
           onClick={closeMobileMenu}
-        ></div>
+        />
 
         <div
           className={`navbar-links ${
@@ -116,20 +150,28 @@ function Navbar() {
           </button>
 
           <motion.div {...navMotion}>
-            <NavLink className={navClass} to="/" onClick={closeMobileMenu}>
+            <NavLink
+              className={navClass}
+              to="/"
+              onClick={closeMobileMenu}
+            >
               <FaHome />
               <span>Home</span>
             </NavLink>
           </motion.div>
 
           <motion.div {...navMotion}>
-            <NavLink className={navClass} to="/menu" onClick={closeMobileMenu}>
+            <NavLink
+              className={navClass}
+              to="/menu"
+              onClick={closeMobileMenu}
+            >
               <FaUtensils />
               <span>Menu</span>
             </NavLink>
           </motion.div>
 
-          {user?.role === "customer" && (
+          {currentUser?.role === "customer" && (
             <>
               <motion.div {...navMotion}>
                 <NavLink
@@ -147,7 +189,9 @@ function Navbar() {
                   <span>Cart</span>
 
                   {cartCount > 0 && (
-                    <span className="cart-count-badge">{cartCount}</span>
+                    <span className="cart-count-badge">
+                      {cartCount}
+                    </span>
                   )}
                 </NavLink>
               </motion.div>
@@ -165,7 +209,7 @@ function Navbar() {
             </>
           )}
 
-          {user?.role === "admin" && (
+          {currentUser?.role === "admin" && (
             <>
               <motion.div {...navMotion}>
                 <NavLink
@@ -213,7 +257,7 @@ function Navbar() {
             </>
           )}
 
-          {user?.role === "subadmin" && (
+          {currentUser?.role === "subadmin" && (
             <motion.div {...navMotion}>
               <NavLink
                 className={navClass}
@@ -226,7 +270,7 @@ function Navbar() {
             </motion.div>
           )}
 
-          {user && (
+          {currentUser && (
             <motion.div {...navMotion}>
               <NavLink
                 className={navClass}
@@ -239,7 +283,7 @@ function Navbar() {
             </motion.div>
           )}
 
-          {!user && (
+          {!currentUser && (
             <>
               <motion.div {...navMotion}>
                 <NavLink
@@ -265,30 +309,41 @@ function Navbar() {
             </>
           )}
 
-          {user && (
+          {currentUser && (
             <>
-              <motion.div
-                className={`nav-user ${
-                  user.role === "admin"
-                    ? "admin-user-badge"
-                    : user.role === "subadmin"
-                      ? "subadmin-user-badge"
-                      : "customer-user-badge"
-                }`}
-                whileHover={{ scale: 1.03 }}
-                transition={{ type: "spring", stiffness: 260 }}
-                title={displayName}
-              >
-                <FaUserCircle />
-                <span>{displayName}</span>
+              <motion.div {...navMotion}>
+                <NavLink
+                  to="/profile"
+                  onClick={closeMobileMenu}
+                  title={`Open ${displayName} profile`}
+                  style={{ textDecoration: "none" }}
+                  className={({ isActive }) =>
+                    `nav-user ${
+                      currentUser.role === "admin"
+                        ? "admin-user-badge"
+                        : currentUser.role === "subadmin"
+                          ? "subadmin-user-badge"
+                          : "customer-user-badge"
+                    } ${
+                      isActive ? "active-profile-link" : ""
+                    }`
+                  }
+                >
+                  <FaUserCircle />
+                  <span>{displayName}</span>
+                </NavLink>
               </motion.div>
 
               <motion.button
+                type="button"
                 className="logout-btn"
                 onClick={handleLogout}
                 whileHover={{ y: -2, scale: 1.04 }}
                 whileTap={{ scale: 0.94 }}
-                transition={{ type: "spring", stiffness: 320 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 320,
+                }}
               >
                 <FaSignOutAlt />
                 <span>Logout</span>

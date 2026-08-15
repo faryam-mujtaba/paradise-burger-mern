@@ -1,6 +1,14 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+} from "react-router-dom";
+
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
+import ScrollToTop from "./components/ScrollToTop";
+import OrderStatusWatcher from "./components/OrderStatusWatcher";
+import ShopStatusBanner from "./components/ShopStatusBanner";
 
 import Home from "./pages/Home";
 import Menu from "./pages/Menu";
@@ -10,40 +18,58 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import OrderSuccess from "./pages/OrderSuccess";
 import MyOrders from "./pages/MyOrders";
+import Profile from "./pages/Profile";
 
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminMenuManagement from "./pages/AdminMenuManagement";
 import AdminCategoryManagement from "./pages/AdminCategoryManagement";
+import AdminDealManagement from "./pages/AdminDealManagement";
+import SubAdminOrders from "./pages/SubAdminOrders";
 
 import ChangePassword from "./pages/ChangePassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import ResendVerification from "./pages/ResendVerification";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-import AdminDealManagement from "./pages/AdminDealManagement";
-import SubAdminOrders from "./pages/SubAdminOrders";
-import ScrollToTop from "./components/ScrollToTop";
-import OrderStatusWatcher from "./components/OrderStatusWatcher";
-import ShopStatusBanner from "./components/ShopStatusBanner";
+
 function App() {
   return (
-    
     <BrowserRouter>
-    <ScrollToTop />
+      <ScrollToTop />
+
       <Navbar />
       <OrderStatusWatcher />
       <ShopStatusBanner />
+
       <main className="page-container">
         <Routes>
           <Route path="/" element={<Home />} />
+
           <Route path="/menu" element={<Menu />} />
+
           <Route path="/login" element={<Login />} />
+
           <Route path="/register" element={<Register />} />
 
-          <Route path="/verify-email/:token" element={<VerifyEmail />} />
-          <Route path="/resend-verification" element={<ResendVerification />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route
+            path="/verify-email/:token"
+            element={<VerifyEmail />}
+          />
+
+          <Route
+            path="/resend-verification"
+            element={<ResendVerification />}
+          />
+
+          <Route
+            path="/forgot-password"
+            element={<ForgotPassword />}
+          />
+
+          <Route
+            path="/reset-password/:token"
+            element={<ResetPassword />}
+          />
 
           <Route
             path="/cart"
@@ -82,6 +108,21 @@ function App() {
           />
 
           <Route
+            path="/profile"
+            element={
+              <ProtectedRoute
+                allowedRoles={[
+                  "customer",
+                  "admin",
+                  "subadmin",
+                ]}
+              >
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path="/admin/dashboard"
             element={
               <ProtectedRoute allowedRoles={["admin"]}>
@@ -98,39 +139,48 @@ function App() {
               </ProtectedRoute>
             }
           />
-<Route
-  path="/admin/categories"
-  element={
-    <ProtectedRoute allowedRoles={["admin"]}>
-      <AdminCategoryManagement />
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/admin/deals"
-  element={
-    <ProtectedRoute allowedRoles={["admin"]}>
-      <AdminDealManagement />
-    </ProtectedRoute>
-  }
-/>
+
+          <Route
+            path="/admin/categories"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AdminCategoryManagement />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/deals"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AdminDealManagement />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/subadmin/orders"
+            element={
+              <ProtectedRoute allowedRoles={["subadmin"]}>
+                <SubAdminOrders />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/change-password"
             element={
-              <ProtectedRoute allowedRoles={["customer", "admin", "subadmin"]}>
+              <ProtectedRoute
+                allowedRoles={[
+                  "customer",
+                  "admin",
+                  "subadmin",
+                ]}
+              >
                 <ChangePassword />
               </ProtectedRoute>
             }
           />
-          <Route
-  path="/subadmin/orders"
-  element={
-    <ProtectedRoute allowedRoles={["subadmin"]}>
-      <SubAdminOrders />
-    </ProtectedRoute>
-  }
-/>
         </Routes>
       </main>
     </BrowserRouter>

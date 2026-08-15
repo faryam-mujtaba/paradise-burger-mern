@@ -1,17 +1,42 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { useAuth } from "./AuthContext";
 
 const CartContext = createContext();
 
 export function CartProvider({ children }) {
-  const storedCart = localStorage.getItem("cart");
+  const { user } = useAuth();
 
-  const [cartItems, setCartItems] = useState(
-    storedCart ? JSON.parse(storedCart) : []
-  );
+  const userId = user?._id || user?.id;
 
+  const cartStorageKey = userId ? `cart_${userId}` : null;
+
+  const [cartItems, setCartItems] = useState([]);
+
+  // Load the cart whenever the logged-in user changes
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cartItems));
-  }, [cartItems]);
+    if (!cartStorageKey) {
+      setCartItems([]);
+      return;
+    }
+
+    try {
+      const storedCart = localStorage.getItem(cartStorageKey);
+
+      setCartItems(storedCart ? JSON.parse(storedCart) : []);
+    } catch (error) {
+      console.error("LOAD CART ERROR:", error);
+      setCartItems([]);
+    }
+  }, [cartStorageKey]);
+
+  // Save cart for the currently logged-in user
+  useEffect(() => {
+    if (!cartStorageKey) {
+      return;
+    }
+
+    localStorage.setItem(cartStorageKey, JSON.stringify(cartItems));
+  }, [cartItems, cartStorageKey]);
 
   const addToCart = (item) => {
     setCartItems((prevItems) => {
@@ -25,7 +50,10 @@ export function CartProvider({ children }) {
       if (existingItem) {
         return prevItems.map((cartItem) =>
           cartItem.cartId === cartId
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
+            ? {
+                ...cartItem,
+                quantity: cartItem.quantity + 1,
+              }
             : cartItem
         );
       }
@@ -55,7 +83,10 @@ export function CartProvider({ children }) {
     setCartItems((prevItems) =>
       prevItems.map((item) =>
         item.cartId === cartId
-          ? { ...item, quantity: item.quantity + 1 }
+          ? {
+              ...item,
+              quantity: item.quantity + 1,
+            }
           : item
       )
     );
@@ -66,7 +97,10 @@ export function CartProvider({ children }) {
       prevItems
         .map((item) =>
           item.cartId === cartId
-            ? { ...item, quantity: item.quantity - 1 }
+            ? {
+                ...item,
+                quantity: item.quantity - 1,
+              }
             : item
         )
         .filter((item) => item.quantity > 0)
@@ -81,7 +115,10 @@ export function CartProvider({ children }) {
 
   const clearCart = () => {
     setCartItems([]);
-    localStorage.setItem("cart", JSON.stringify([]));
+
+    if (cartStorageKey) {
+      localStorage.setItem(cartStorageKey, JSON.stringify([]));
+    }
   };
 
   const subtotal = cartItems.reduce(
@@ -90,7 +127,8 @@ export function CartProvider({ children }) {
   );
 
   const deliveryFee = 0;
-const totalAmount = subtotal;
+  const totalAmount = subtotal;
+
   return (
     <CartContext.Provider
       value={{

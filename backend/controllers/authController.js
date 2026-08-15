@@ -15,34 +15,48 @@ const registerUser = async (req, res) => {
   try {
     const { fullName, phone, email, password, address } = req.body;
 
-    if (!fullName || !phone || !email || !password) {
+    const cleanedFullName = fullName?.trim();
+    const cleanedPhone = phone?.trim();
+    const cleanedEmail = email?.trim().toLowerCase();
+
+    if (!cleanedFullName || !cleanedPhone || !cleanedEmail || !password) {
       return res.status(400).json({
         success: false,
         message: "Full name, phone, email, and password are required",
       });
     }
 
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Password must be at least 6 characters and include one uppercase letter and one special character",
+      });
+    }
+
     const existingUser = await User.findOne({
-      $or: [{ phone }, { email: email.toLowerCase() }],
+      $or: [{ phone: cleanedPhone }, { email: cleanedEmail }],
     });
 
     if (existingUser) {
       return res.status(400).json({
         success: false,
         message:
-          existingUser.phone === phone
+          existingUser.phone === cleanedPhone
             ? "User with this phone number already exists"
             : "User with this email already exists",
       });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const { rawToken, hashedToken, expires } = createVerificationToken();
+
+    const { rawToken, hashedToken, expires } =
+      createVerificationToken();
 
     createdUser = await User.create({
-      fullName,
-      phone,
-      email: email.toLowerCase(),
+      fullName: cleanedFullName,
+      phone: cleanedPhone,
+      email: cleanedEmail,
       password: hashedPassword,
       role: "customer",
       isPhoneVerified: false,
@@ -52,17 +66,18 @@ const registerUser = async (req, res) => {
       addresses: address
         ? [
             {
-              label: address.label || "Home",
-              addressLine: address.addressLine,
-              city: address.city,
-              area: address.area,
+              label: address.label?.trim() || "Home",
+              addressLine: address.addressLine?.trim() || "",
+              city: address.city?.trim() || "",
+              area: address.area?.trim() || "",
               isDefault: true,
             },
           ]
         : [],
     });
 
-    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${rawToken}`;
+    const verificationUrl =
+      `${process.env.FRONTEND_URL}/verify-email/${rawToken}`;
 
     await sendEmail({
       to: createdUser.email,
@@ -71,22 +86,42 @@ const registerUser = async (req, res) => {
       html: `
         <div style="font-family: Arial, sans-serif; line-height: 1.6;">
           <h2>Welcome to Paradise Burger 🍔</h2>
+
           <p>Hello ${createdUser.fullName},</p>
-          <p>Please verify your email address to activate ordering and checkout.</p>
-          <a 
-            href="${verificationUrl}" 
+
+          <p>
+            Please verify your email address to activate ordering
+            and checkout.
+          </p>
+
+          <a
+            href="${verificationUrl}"
             target="_blank"
-            style="display:inline-block;padding:10px 16px;background:#d62828;color:white;text-decoration:none;border-radius:6px;"
+            style="
+              display: inline-block;
+              padding: 10px 16px;
+              background: #d62828;
+              color: white;
+              text-decoration: none;
+              border-radius: 6px;
+            "
           >
             Verify Email
           </a>
+
           <p>This verification link will expire in 24 hours.</p>
-          <p>If you did not create this account, please ignore this email.</p>
+
+          <p>
+            If you did not create this account, please ignore this email.
+          </p>
         </div>
       `,
     });
 
-    const token = generateToken(createdUser._id, createdUser.role);
+    const token = generateToken(
+      createdUser._id,
+      createdUser.role
+    );
 
     return res.status(201).json({
       success: true,
@@ -108,16 +143,33 @@ const registerUser = async (req, res) => {
   } catch (error) {
     console.error("REGISTER ERROR:", error);
 
-    if (createdUser && createdUser._id) {
-      await User.deleteOne({ _id: createdUser._id });
+    if (createdUser?._id) {
+      try {
+        await User.deleteOne({
+          _id: createdUser._id,
+        });
+
+        console.log("Incomplete customer account removed");
+      } catch (deleteError) {
+        console.error(
+          "FAILED TO REMOVE INCOMPLETE CUSTOMER:",
+          deleteError.message
+        );
+      }
     }
 
-    return res.status(500).json({
-      success: false,
-      message:
-        "Registration failed. Email could not be sent, so the account was not saved. Please check email settings.",
-      error: error.message,
-    });
+    const isEmailAuthenticationError =
+      error.code === "EAUTH" ||
+      error.responseCode === 535;
+
+    return res
+      .status(isEmailAuthenticationError ? 503 : 500)
+      .json({
+        success: false,
+        message: isEmailAuthenticationError
+          ? "Registration could not be completed because the email service login failed. Please contact the administrator."
+          : "Registration failed because the verification email could not be sent. The account was not saved.",
+      });
   }
 };
 
